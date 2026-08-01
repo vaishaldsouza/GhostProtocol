@@ -8,6 +8,8 @@ import {
   getResendEmailLogs,
   updateResendDonorResponse,
   seedInitialResendEmailLogs,
+  saveEmailCredentials,
+  loadEmailCredentials,
   ResendEmailLog,
   ResendEmailPayload,
   generateResendTransactionalHtml
@@ -54,9 +56,29 @@ export const ResendDispatchModal: React.FC<ResendDispatchModalProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [copiedLogId, setCopiedLogId] = useState<string | null>(null);
 
-  // Config State
-  const [resendApiKey, setResendApiKey] = useState('');
-  const [resendFromEmail, setResendFromEmail] = useState('onboarding@resend.dev');
+  // Config State — loaded from localStorage on mount
+  const [gmailUser, setGmailUser] = useState('');
+  const [gmailAppPassword, setGmailAppPassword] = useState('');
+  const [gmailFromName, setGmailFromName] = useState('RedPulse Emergency');
+  const [emailConfigSaved, setEmailConfigSaved] = useState(false);
+
+  // Load persisted credentials when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const creds = loadEmailCredentials();
+      setGmailUser(creds.gmailUser);
+      setGmailAppPassword(creds.gmailAppPassword);
+      setGmailFromName(creds.fromName);
+    }
+  }, [isOpen]);
+
+  const handleSaveEmailCredentials = () => {
+    saveEmailCredentials({ gmailUser, gmailAppPassword, fromName: gmailFromName });
+    setEmailConfigSaved(true);
+    setTimeout(() => setEmailConfigSaved(false), 3000);
+  };
+
+  const hasEmailCreds = Boolean(gmailUser && gmailAppPassword);
 
   const refreshLogs = () => {
     seedInitialResendEmailLogs(donorEmail, donorName);
@@ -642,58 +664,105 @@ export const ResendDispatchModal: React.FC<ResendDispatchModalProps> = ({
             </div>
           )}
 
-          {/* TAB 4: RESEND API KEY CONFIG */}
+          {/* TAB 4: EMAIL CONFIG */}
           {activeTab === 'config' && (
             <div className="space-y-6">
-              <div className="p-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-2xl flex items-start gap-3">
-                <ShieldAlert className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+
+              {/* Info banner */}
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-2xl flex items-start gap-3">
+                <ShieldAlert className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                 <div className="text-xs text-slate-700 dark:text-slate-300">
                   <h5 className="font-extrabold text-slate-900 dark:text-white text-sm mb-1">
-                    Resend App API Configuration Guide
+                    Free Email via Gmail SMTP
                   </h5>
-                  <p>
-                    RedPulse uses the <strong>Resend REST API</strong> to dispatch transactional HTML emails directly to donors.
-                  </p>
-                  <p className="mt-1">
-                    To send emails to live inboxes, add your Resend key to <code>.env.example</code> or paste it below. In preview mode without a key, all emails are cleanly rendered in our live interactive preview tab.
-                  </p>
+                  <p>RedPulse sends real transactional emails using your <strong>Gmail account</strong> — completely free, no API subscription needed.</p>
+                  <p className="mt-1">You need a <strong>Gmail App Password</strong> (not your regular password). Enable 2FA on your Google account, then go to <strong>myaccount.google.com → Security → App Passwords</strong> and generate one for "Mail".</p>
                 </div>
               </div>
 
+              {/* Credentials form */}
               <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
                 <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Key className="w-4 h-4 text-red-500" />
-                  Resend API Key &amp; Sender Domain Settings
+                  Gmail SMTP Credentials
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
                     <label className="block font-bold text-slate-600 dark:text-slate-400 mb-1">
-                      Resend API Key (VITE_RESEND_API_KEY)
+                      Gmail Address
                     </label>
                     <input
-                      type="password"
-                      placeholder="re_123456789..."
-                      value={resendApiKey}
-                      onChange={(e) => setResendApiKey(e.target.value)}
+                      type="email"
+                      placeholder="yourname@gmail.com"
+                      value={gmailUser}
+                      onChange={(e) => setGmailUser(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-red-500"
                     />
                   </div>
 
                   <div>
                     <label className="block font-bold text-slate-600 dark:text-slate-400 mb-1">
-                      Sender Email (VITE_RESEND_FROM_EMAIL)
+                      Gmail App Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="xxxx xxxx xxxx xxxx"
+                      value={gmailAppPassword}
+                      onChange={(e) => setGmailAppPassword(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block font-bold text-slate-600 dark:text-slate-400 mb-1">
+                      Sender Display Name
                     </label>
                     <input
                       type="text"
-                      placeholder="onboarding@resend.dev"
-                      value={resendFromEmail}
-                      onChange={(e) => setResendFromEmail(e.target.value)}
+                      placeholder="RedPulse Emergency"
+                      value={gmailFromName}
+                      onChange={(e) => setGmailFromName(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-red-500"
                     />
                   </div>
                 </div>
               </div>
+
+              {/* Status + Save */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className={`w-2.5 h-2.5 rounded-full ${hasEmailCreds ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                  <span className="font-bold text-slate-700 dark:text-slate-300">Active Provider:</span>
+                  <span className={`font-black ${hasEmailCreds ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
+                    {hasEmailCreds ? `Gmail SMTP (${gmailUser})` : 'Email Sandbox Simulator'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleSaveEmailCredentials}
+                  className={`px-4 py-2 font-extrabold text-xs rounded-xl flex items-center gap-2 transition shadow-xs ${
+                    emailConfigSaved
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700'
+                  }`}
+                >
+                  {emailConfigSaved ? (
+                    <><Check className="w-3.5 h-3.5" /><span>Credentials Saved!</span></>
+                  ) : (
+                    <><Key className="w-3.5 h-3.5" /><span>Save &amp; Activate Gmail</span></>
+                  )}
+                </button>
+              </div>
+
+              {/* How to get App Password */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                <strong>How to get a Gmail App Password:</strong><br/>
+                1. Go to <strong>myaccount.google.com</strong> → Security → 2-Step Verification (enable it)<br/>
+                2. Then go to <strong>myaccount.google.com/apppasswords</strong><br/>
+                3. Select app: <strong>Mail</strong>, device: <strong>Other</strong> → Generate<br/>
+                4. Copy the 16-character password and paste it above
+              </div>
+
             </div>
           )}
 

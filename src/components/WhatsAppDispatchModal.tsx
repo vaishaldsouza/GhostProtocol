@@ -8,6 +8,8 @@ import {
   getWhatsAppLogs,
   updateWhatsAppDonorResponse,
   seedInitialWhatsAppLogs,
+  saveWhatsAppCredentials,
+  loadWhatsAppCredentials,
   WhatsAppMessageLog,
   WhatsAppAlertPayload,
   formatWhatsAppMessageTemplate
@@ -54,12 +56,45 @@ export const WhatsAppDispatchModal: React.FC<WhatsAppDispatchModalProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [copiedLogId, setCopiedLogId] = useState<string | null>(null);
 
-  // Config State
+  // Config State — loaded from localStorage on mount
   const [metaToken, setMetaToken] = useState('');
   const [metaPhoneId, setMetaPhoneId] = useState('');
   const [twilioAccountSid, setTwilioAccountSid] = useState('');
   const [twilioAuthToken, setTwilioAuthToken] = useState('');
   const [twilioNumber, setTwilioNumber] = useState('+14155238886');
+  const [configSaved, setConfigSaved] = useState(false);
+
+  // Load persisted credentials when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const creds = loadWhatsAppCredentials();
+      setMetaToken(creds.metaToken);
+      setMetaPhoneId(creds.metaPhoneId);
+      setTwilioAccountSid(creds.twilioAccountSid);
+      setTwilioAuthToken(creds.twilioAuthToken);
+      setTwilioNumber(creds.twilioWhatsAppNumber);
+    }
+  }, [isOpen]);
+
+  const handleSaveCredentials = () => {
+    saveWhatsAppCredentials({
+      metaToken,
+      metaPhoneId,
+      twilioAccountSid,
+      twilioAuthToken,
+      twilioWhatsAppNumber: twilioNumber,
+    });
+    setConfigSaved(true);
+    setTimeout(() => setConfigSaved(false), 3000);
+  };
+
+  const hasMetaCreds = Boolean(metaToken && metaPhoneId);
+  const hasTwilioCreds = Boolean(twilioAccountSid && twilioAuthToken);
+  const activeProvider = hasMetaCreds
+    ? 'Meta WhatsApp Business API'
+    : hasTwilioCreds
+    ? 'Twilio WhatsApp Sandbox'
+    : 'Simulation Mode';
 
   const refreshLogs = () => {
     seedInitialWhatsAppLogs(donorPhone, donorName);
@@ -152,11 +187,17 @@ export const WhatsAppDispatchModal: React.FC<WhatsAppDispatchModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black uppercase">
-                  Meta WhatsApp Business API
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                  hasMetaCreds
+                    ? 'bg-emerald-400 text-slate-950'
+                    : hasTwilioCreds
+                    ? 'bg-amber-400 text-slate-950'
+                    : 'bg-slate-500 text-white'
+                }`}>
+                  {activeProvider}
                 </span>
                 <span className="text-xs text-emerald-100 hidden sm:inline">
-                  Twilio Sandbox Enabled
+                  {hasMetaCreds || hasTwilioCreds ? 'Live Mode Active' : 'Sandbox Mode'}
                 </span>
               </div>
               <h3 className="text-lg font-black tracking-tight mt-0.5">
@@ -685,6 +726,66 @@ export const WhatsAppDispatchModal: React.FC<WhatsAppDispatchModalProps> = ({
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Active Provider Status */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      hasMetaCreds
+                        ? 'bg-emerald-500'
+                        : hasTwilioCreds
+                        ? 'bg-amber-500'
+                        : 'bg-slate-400'
+                    }`}
+                  />
+                  <span className="font-bold text-slate-700 dark:text-slate-300">
+                    Active Provider:
+                  </span>
+                  <span
+                    className={`font-black ${
+                      hasMetaCreds
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : hasTwilioCreds
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    {activeProvider}
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleSaveCredentials}
+                  className={`px-4 py-2 font-extrabold text-xs rounded-xl flex items-center gap-2 transition shadow-xs ${
+                    configSaved
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100'
+                  }`}
+                >
+                  {configSaved ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Credentials Saved!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Key className="w-3.5 h-3.5" />
+                      <span>Save &amp; Activate Credentials</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Gateway server hint */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                  <strong>Gateway server required for live sending.</strong> Run{' '}
+                  <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded font-mono">npx tsx server.ts</code>{' '}
+                  in a separate terminal so the app can proxy messages through the secure backend. Without it, messages are captured locally in sandbox mode.
+                </p>
               </div>
 
             </div>

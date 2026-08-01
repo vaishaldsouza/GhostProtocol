@@ -20,7 +20,10 @@ import {
   ArrowRight,
   UserCheck,
   UserX,
-  Play
+  Play,
+  Key,
+  Check,
+  ShieldAlert
 } from 'lucide-react';
 import {
   initiateTwilioVoiceCall,
@@ -28,6 +31,8 @@ import {
   getStoredCallLogs,
   generateTwimlXml,
   validateTwilioSignatureSimulated,
+  saveVoiceCredentials,
+  loadVoiceCredentials,
   CallLogEntry
 } from '../utils/twilioVoice';
 
@@ -74,6 +79,25 @@ export const TwilioVoiceDispatchModal: React.FC<TwilioVoiceModalProps> = ({
   // Signature Test
   const [testSigHeader, setTestSigHeader] = useState('v1_Twilio_HMAC_SHA1_Signature_Sample_Key_991823');
   const [testSigResult, setTestSigResult] = useState<{ isValid: boolean; details: string } | null>(null);
+
+  // Bland.ai Config
+  const [blandApiKey, setBlandApiKey] = useState('');
+  const [voiceConfigSaved, setVoiceConfigSaved] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const creds = loadVoiceCredentials();
+      setBlandApiKey(creds.blandApiKey);
+    }
+  }, [isOpen]);
+
+  const handleSaveVoiceCredentials = () => {
+    saveVoiceCredentials({ blandApiKey });
+    setVoiceConfigSaved(true);
+    setTimeout(() => setVoiceConfigSaved(false), 3000);
+  };
+
+  const hasBlandKey = Boolean(blandApiKey);
 
   useEffect(() => {
     if (isOpen) {
@@ -302,6 +326,18 @@ export const TwilioVoiceDispatchModal: React.FC<TwilioVoiceModalProps> = ({
           >
             <Database className="w-4 h-4" />
             <span>4. Supabase Call Logs ({logs.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('config' as any)}
+            className={`px-4 py-3 text-xs font-bold flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
+              activeTab === ('config' as any)
+                ? 'border-red-600 text-red-600 dark:text-red-400 bg-white dark:bg-slate-900 shadow-xs'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Key className="w-4 h-4" />
+            <span>5. API Config</span>
           </button>
         </div>
 
@@ -746,6 +782,83 @@ export const TwilioVoiceDispatchModal: React.FC<TwilioVoiceModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* TAB 5: BLAND.AI CONFIG */}
+          {activeTab === ('config' as any) && (
+            <div className="space-y-6">
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-2xl flex items-start gap-3">
+                <ShieldAlert className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-700 dark:text-slate-300">
+                  <h5 className="font-extrabold text-slate-900 dark:text-white text-sm mb-1">
+                    Free AI Voice Calls via Bland.ai
+                  </h5>
+                  <p>
+                    RedPulse uses <strong>Bland.ai</strong> to make real automated voice calls to donors — completely free to start.
+                    Sign up at <strong>app.bland.ai</strong>, copy your API key, and paste it below.
+                  </p>
+                  <p className="mt-1 text-emerald-700 dark:text-emerald-300 font-bold">
+                    Free tier: ~1,000 minutes/month. No credit card required.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+                <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <Key className="w-4 h-4 text-red-500" />
+                  Bland.ai API Key
+                </h4>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">
+                    API Key (from app.bland.ai → API Keys)
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="org_..."
+                    value={blandApiKey}
+                    onChange={(e) => setBlandApiKey(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              </div>
+
+              {/* Status + Save */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className={`w-2.5 h-2.5 rounded-full ${hasBlandKey ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                  <span className="font-bold text-slate-700 dark:text-slate-300">Active Provider:</span>
+                  <span className={`font-black ${hasBlandKey ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
+                    {hasBlandKey ? 'Bland.ai (Live Calls)' : 'Browser Voice Simulator'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleSaveVoiceCredentials}
+                  className={`px-4 py-2 font-extrabold text-xs rounded-xl flex items-center gap-2 transition shadow-xs ${
+                    voiceConfigSaved
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700'
+                  }`}
+                >
+                  {voiceConfigSaved ? (
+                    <><Check className="w-3.5 h-3.5" /><span>Key Saved!</span></>
+                  ) : (
+                    <><Key className="w-3.5 h-3.5" /><span>Save &amp; Activate Bland.ai</span></>
+                  )}
+                </button>
+              </div>
+
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                <strong>How to get a Bland.ai API key:</strong><br/>
+                1. Go to <strong>app.bland.ai</strong> and create a free account<br/>
+                2. Navigate to <strong>API Keys</strong> in the dashboard<br/>
+                3. Click <strong>Create Key</strong>, copy it, and paste above<br/>
+                4. Make sure the <strong>npm run server</strong> gateway is running — it handles the call
+              </div>
+
+            </div>
+          )}
+
         </div>
 
         {/* Modal Footer */}

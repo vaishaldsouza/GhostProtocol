@@ -38,6 +38,33 @@ export interface ResendEmailLog {
 }
 
 const RESEND_LOGS_STORAGE_KEY = 'redpulse_resend_email_logs';
+const EMAIL_CREDS_STORAGE_KEY = 'redpulse_email_credentials';
+
+// ─── Email credentials helpers ────────────────────────────────────────────────
+
+export interface EmailCredentials {
+  gmailUser: string;
+  gmailAppPassword: string;
+  fromName: string;
+}
+
+export function saveEmailCredentials(creds: EmailCredentials): void {
+  try {
+    localStorage.setItem(EMAIL_CREDS_STORAGE_KEY, JSON.stringify(creds));
+  } catch (err) {
+    console.error('Error saving email credentials:', err);
+  }
+}
+
+export function loadEmailCredentials(): EmailCredentials {
+  const defaults: EmailCredentials = { gmailUser: '', gmailAppPassword: '', fromName: 'RedPulse Emergency' };
+  try {
+    const raw = localStorage.getItem(EMAIL_CREDS_STORAGE_KEY);
+    return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+  } catch {
+    return defaults;
+  }
+}
 
 /**
  * Generates responsive, transactional HTML email for Resend
@@ -220,40 +247,40 @@ export async function sendResendTransactionalEmail(
   const subject = '🚨 Emergency Blood Donation Needed';
   const htmlBody = generateResendTransactionalHtml(payload, acceptLink, declineLink);
 
-  const resendApiKey = import.meta.env.VITE_RESEND_API_KEY || import.meta.env.RESEND_API_KEY;
-  const senderEmail = import.meta.env.VITE_RESEND_FROM_EMAIL || 'RedPulse Emergency <onboarding@resend.dev>';
+  // Load runtime credentials saved via Config tab
+  const emailCreds = loadEmailCredentials();
 
   let provider: ResendEmailLog['provider'] = 'Resend Sandbox Simulator';
   let rawApiResponse: any = null;
   let status: ResendEmailLog['status'] = 'sent';
   let resendEmailId: string | undefined = undefined;
 
-  if (resendApiKey) {
-    try {
-      provider = 'Resend Transactional API';
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: senderEmail,
-          to: [payload.donorEmail],
-          subject: subject,
-          html: htmlBody,
-        }),
-      });
+  try {
+    // Route through /api/email/send proxy — uses Gmail SMTP server-side (no CORS)
+    const response = await fetch('/api/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: payload.donorEmail,
+        subject,
+        html: htmlBody,
+        gmailUser: emailCreds.gmailUser,
+        gmailAppPassword: emailCreds.gmailAppPassword,
+        fromName: emailCreds.fromName,
+      }),
+    });
 
-      rawApiResponse = await response.json();
-      if (response.ok && rawApiResponse?.id) {
-        resendEmailId = rawApiResponse.id;
-        status = 'delivered';
-      }
-    } catch (err: any) {
-      console.warn('Resend API call failed, falling back to sandbox simulator:', err);
-      rawApiResponse = { error: err.message };
+    rawApiResponse = await response.json();
+
+    if (response.ok && rawApiResponse?.success) {
+      const p: string = rawApiResponse.provider || '';
+      provider = p.includes('Simulator') ? 'Resend Sandbox Simulator' : 'Resend Transactional API';
+      resendEmailId = rawApiResponse.messageId;
+      status = p.includes('Simulator') ? 'sent' : 'delivered';
     }
+  } catch (err: any) {
+    console.warn('Email proxy unreachable, sandbox mode active:', err.message);
+    rawApiResponse = { note: 'Gateway server not running. Start with: npm run server', sandbox: true };
   }
 
   const logRecord: ResendEmailLog = {

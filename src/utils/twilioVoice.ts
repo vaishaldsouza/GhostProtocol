@@ -30,6 +30,30 @@ export interface VoiceCallParams {
 }
 
 const LOCAL_STORAGE_CALL_LOGS_KEY = 'redpulse_twilio_call_logs';
+const VOICE_CREDS_STORAGE_KEY = 'redpulse_voice_credentials';
+
+// ─── Voice credentials helpers ────────────────────────────────────────────────
+
+export interface VoiceCredentials {
+  blandApiKey: string;
+}
+
+export function saveVoiceCredentials(creds: VoiceCredentials): void {
+  try {
+    localStorage.setItem(VOICE_CREDS_STORAGE_KEY, JSON.stringify(creds));
+  } catch (err) {
+    console.error('Error saving voice credentials:', err);
+  }
+}
+
+export function loadVoiceCredentials(): VoiceCredentials {
+  try {
+    const raw = localStorage.getItem(VOICE_CREDS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { blandApiKey: '' };
+  } catch {
+    return { blandApiKey: '' };
+  }
+}
 
 /**
  * Helper to get saved call logs from localStorage or memory fallback
@@ -195,6 +219,40 @@ export const initiateTwilioVoiceCall = async (params: VoiceCallParams): Promise<
 
   // Always save to fallback local store for real-time UI rendering
   saveCallLogToStore(logEntry);
+
+  // ── Try real voice call via /api/voice/call proxy (Bland.ai) ──
+  try {
+    const creds = loadVoiceCredentials();
+    const proxyRes = await fetch('/api/voice/call', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phoneNumber: params.phoneNumber,
+        donorName: params.donorName,
+        bloodGroup: params.bloodGroup,
+        hospitalName: params.hospitalName,
+        distanceKm: params.distanceKm,
+        requestId: params.requestId,
+        donorId: params.donorId,
+        blandApiKey: creds.blandApiKey,
+      }),
+    });
+
+    if (proxyRes.ok) {
+      const proxyData = await proxyRes.json() as { success: boolean; provider?: string; callId?: string };
+      if (proxyData.success) {
+        console.log(`[Voice] Call dispatched via ${proxyData.provider} — ID: ${proxyData.callId}`);
+        // Update log with real call ID if available
+        if (proxyData.callId && !proxyData.callId.startsWith('sim-')) {
+          logEntry.call_sid = proxyData.callId;
+          logEntry.status = 'initiated';
+          saveCallLogToStore(logEntry);
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn('[Voice] Proxy call failed, using browser simulation only:', err.message);
+  }
 
   return {
     success: true,

@@ -1,4 +1,5 @@
 import { BloodType } from '../types';
+import { supabase } from './supabase';
 
 export interface DonorScoreBreakdown {
   distance_km: number;
@@ -208,10 +209,11 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 // Local evaluation matching exact FastAPI weighted formula
-export function evaluateLocalPrediction(params: PredictDonorsParams): RankedPredictionDonor[] {
+export function evaluateLocalPrediction(params: PredictDonorsParams, customPool?: typeof LOCAL_DONOR_POOL): RankedPredictionDonor[] {
+  const pool = customPool || LOCAL_DONOR_POOL;
   const results: RankedPredictionDonor[] = [];
 
-  for (const donor of LOCAL_DONOR_POOL) {
+  for (const donor of pool) {
     if (!donor.is_active || !donor.is_verified || donor.age < 18 || donor.age > 65 || donor.last_donated_days_ago < 56) {
       continue;
     }
@@ -290,6 +292,59 @@ export function evaluateLocalPrediction(params: PredictDonorsParams): RankedPred
 
 // API Callers
 export async function predictDonorsAPI(params: PredictDonorsParams): Promise<RankedPredictionDonor[]> {
+  // 1. Try live Supabase donor data first
+  try {
+    const { data: donors, error } = await supabase
+      .from('profiles')
+      .select(`
+        id, full_name, blood_type, phone, email, location,
+        latitude, longitude, is_available,
+        total_donations, accepted_requests, declined_requests,
+        total_requests_received, last_donated_at
+      `)
+      .eq('role', 'donor')
+      .eq('is_available', true)
+      .not('latitude', 'is', null)
+      .not('longitude', 'is', null);
+
+    if (!error && donors && donors.length > 0) {
+      // Map Supabase rows to the LOCAL_DONOR_POOL shape
+      const mappedPool = donors.map((d: any) => {
+        const lastDonatedDaysAgo = d.last_donated_at
+          ? Math.floor((Date.now() - new Date(d.last_donated_at).getTime()) / 86400000)
+          : 180;
+        return {
+          id: d.id,
+          name: d.full_name,
+          blood_group: d.blood_type as BloodType,
+          phone: d.phone || '',
+          email: d.email,
+          latitude: d.latitude,
+          longitude: d.longitude,
+          location: d.location || 'Unknown',
+          is_available: d.is_available,
+          is_active: true,
+          is_verified: true,
+          age: 30, // age not stored — default eligible age
+          last_donated_days_ago: lastDonatedDaysAgo,
+          total_requests_received: d.total_requests_received || 0,
+          accepted_requests: d.accepted_requests || 0,
+          declined_requests: d.declined_requests || 0,
+          total_donations: d.total_donations || 0,
+          availability_status: d.is_available ? 'available' : 'unavailable',
+        };
+      });
+
+      // Run the scoring algorithm with live data
+      const results = evaluateLocalPrediction(params, mappedPool);
+      console.log(`[AI Prediction] Supabase live — ${results.length} donors ranked`);
+      return results;
+    }
+  } catch (err) {
+    console.warn('[AI Prediction] Supabase unavailable, falling back to local pool:', err);
+  }
+
+  // 2. Try FastAPI backend
   try {
     const res = await fetch('/predict-donors', {
       method: 'POST',
@@ -303,9 +358,10 @@ export async function predictDonorsAPI(params: PredictDonorsParams): Promise<Ran
       }
     }
   } catch (err) {
-    console.warn('Backend API /predict-donors unavailable, falling back to client evaluation:', err);
+    console.warn('[AI Prediction] FastAPI backend unavailable:', err);
   }
 
+  // 3. Local hardcoded fallback
   return evaluateLocalPrediction(params);
 }
 

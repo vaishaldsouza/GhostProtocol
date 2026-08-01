@@ -34,7 +34,77 @@ export interface WhatsAppMessageLog {
   rawApiResponse?: any;
 }
 
+// ─── Storage keys ─────────────────────────────────────────────────────────────
 const WHATSAPP_LOGS_STORAGE_KEY = 'redpulse_whatsapp_message_logs';
+const WHATSAPP_CREDS_STORAGE_KEY = 'redpulse_whatsapp_credentials';
+
+// ─── Credentials helpers ──────────────────────────────────────────────────────
+
+export interface WhatsAppCredentials {
+  metaToken: string;
+  metaPhoneId: string;
+  twilioAccountSid: string;
+  twilioAuthToken: string;
+  twilioWhatsAppNumber: string;
+}
+
+/** Persist runtime credentials entered in the Config tab */
+export function saveWhatsAppCredentials(creds: WhatsAppCredentials): void {
+  try {
+    localStorage.setItem(WHATSAPP_CREDS_STORAGE_KEY, JSON.stringify(creds));
+  } catch (err) {
+    console.error('Error saving WhatsApp credentials:', err);
+  }
+}
+
+/** Load previously saved runtime credentials */
+export function loadWhatsAppCredentials(): WhatsAppCredentials {
+  const defaults: WhatsAppCredentials = {
+    metaToken: '',
+    metaPhoneId: '',
+    twilioAccountSid: '',
+    twilioAuthToken: '',
+    twilioWhatsAppNumber: '+14155238886',
+  };
+  try {
+    const raw = localStorage.getItem(WHATSAPP_CREDS_STORAGE_KEY);
+    return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+  } catch {
+    return defaults;
+  }
+}
+
+/**
+ * Resolve credentials: localStorage > .env vars
+ * This allows the Config tab to override env vars at runtime.
+ */
+function resolveCredentials(): WhatsAppCredentials {
+  const saved = loadWhatsAppCredentials();
+  return {
+    metaToken:
+      saved.metaToken ||
+      import.meta.env.VITE_META_WHATSAPP_TOKEN ||
+      '',
+    metaPhoneId:
+      saved.metaPhoneId ||
+      import.meta.env.VITE_META_PHONE_NUMBER_ID ||
+      '',
+    twilioAccountSid:
+      saved.twilioAccountSid ||
+      import.meta.env.VITE_TWILIO_ACCOUNT_SID ||
+      '',
+    twilioAuthToken:
+      saved.twilioAuthToken ||
+      import.meta.env.VITE_TWILIO_AUTH_TOKEN ||
+      '',
+    twilioWhatsAppNumber:
+      saved.twilioWhatsAppNumber ||
+      import.meta.env.VITE_TWILIO_WHATSAPP_NUMBER ||
+      '+14155238886',
+  };
+}
+
+// ─── Message formatting ───────────────────────────────────────────────────────
 
 /**
  * Generates the required formatted WhatsApp message template
@@ -69,9 +139,9 @@ Tap below:
 [Accept] [Decline]`;
 }
 
-/**
- * Reads stored WhatsApp message logs from localStorage
- */
+// ─── Log helpers ──────────────────────────────────────────────────────────────
+
+/** Reads stored WhatsApp message logs from localStorage */
 export function getWhatsAppLogs(): WhatsAppMessageLog[] {
   try {
     const data = localStorage.getItem(WHATSAPP_LOGS_STORAGE_KEY);
@@ -82,9 +152,7 @@ export function getWhatsAppLogs(): WhatsAppMessageLog[] {
   }
 }
 
-/**
- * Saves or updates a WhatsApp message log
- */
+/** Saves or updates a WhatsApp message log */
 export function saveWhatsAppLog(log: WhatsAppMessageLog): void {
   try {
     const logs = getWhatsAppLogs();
@@ -100,8 +168,57 @@ export function saveWhatsAppLog(log: WhatsAppMessageLog): void {
   }
 }
 
+// ─── Send via server-side proxy ───────────────────────────────────────────────
+
 /**
- * Send WhatsApp Message via Meta WhatsApp Business API or Twilio Sandbox
+ * Calls the /api/whatsapp/send Express proxy which handles Meta / Twilio server-side.
+ * Falls back to simulation if the proxy is unreachable (e.g., no gateway running).
+ */
+async function callWhatsAppProxy(
+  to: string,
+  messageBody: string,
+  creds: WhatsAppCredentials
+): Promise<{ success: boolean; provider: WhatsAppMessageLog['provider']; rawApiResponse: any }> {
+  try {
+    const response = await fetch('/api/whatsapp/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to,
+        messageBody,
+        provider: 'auto',
+        metaToken: creds.metaToken,
+        metaPhoneId: creds.metaPhoneId,
+        twilioAccountSid: creds.twilioAccountSid,
+        twilioAuthToken: creds.twilioAuthToken,
+        twilioWhatsAppNumber: creds.twilioWhatsAppNumber,
+      }),
+    });
+
+    const data = await response.json();
+
+    return {
+      success: response.ok && data.success,
+      provider: (data.provider as WhatsAppMessageLog['provider']) || 'Simulated Webhook Gateway',
+      rawApiResponse: data,
+    };
+  } catch (err: any) {
+    // Proxy unreachable — fall back to simulation
+    console.warn('WhatsApp gateway proxy unreachable, running in simulation mode:', err.message);
+    return {
+      success: true,
+      provider: 'Simulated Webhook Gateway',
+      rawApiResponse: { note: 'Gateway server not running. Start with: npx tsx server.ts', sandbox: true },
+    };
+  }
+}
+
+// ─── Main send function ───────────────────────────────────────────────────────
+
+/**
+ * Send WhatsApp emergency alert.
+ * Routes through the /api/whatsapp/send proxy to avoid CORS.
+ * Falls back gracefully to local simulation when the server is unavailable.
  */
 export async function sendWhatsAppEmergencyAlert(
   payload: WhatsAppAlertPayload
@@ -109,87 +226,21 @@ export async function sendWhatsAppEmergencyAlert(
   const requestId = payload.requestId || `sos-${Date.now()}`;
   const donorId = payload.donorId || `donor-${Math.floor(Math.random() * 1000)}`;
   const secureToken = payload.secureToken || Math.random().toString(36).substring(2, 12);
-  
-  const baseUrl = payload.customBaseUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://redpulse.app');
+
+  const baseUrl =
+    payload.customBaseUrl ||
+    (typeof window !== 'undefined' ? window.location.origin : 'https://redpulse.app');
   const secureLink = `${baseUrl}/?action=respond_sos&req=${requestId}&donor=${donorId}&token=${secureToken}`;
 
   const messageText = formatWhatsAppMessageTemplate(payload, secureLink);
+  const creds = resolveCredentials();
 
-  const metaToken = import.meta.env.VITE_META_WHATSAPP_TOKEN || import.meta.env.META_WHATSAPP_TOKEN;
-  const metaPhoneId = import.meta.env.VITE_META_PHONE_NUMBER_ID || import.meta.env.META_PHONE_NUMBER_ID;
-  const twilioAccountSid = import.meta.env.VITE_TWILIO_ACCOUNT_SID || import.meta.env.TWILIO_ACCOUNT_SID;
-  const twilioAuthToken = import.meta.env.VITE_TWILIO_AUTH_TOKEN || import.meta.env.TWILIO_AUTH_TOKEN;
-  const twilioWhatsAppNumber = import.meta.env.VITE_TWILIO_WHATSAPP_NUMBER || import.meta.env.TWILIO_WHATSAPP_NUMBER || '+14155238886';
+  const { success, provider, rawApiResponse } = await callWhatsAppProxy(
+    payload.donorPhone,
+    messageText,
+    creds
+  );
 
-  let provider: WhatsAppMessageLog['provider'] = 'Simulated Webhook Gateway';
-  let rawApiResponse: any = null;
-  let apiSuccess = false;
-
-  // 1. Try Meta WhatsApp Cloud API if credentials present
-  if (metaToken && metaPhoneId) {
-    try {
-      provider = 'Meta WhatsApp Business API';
-      const cleanPhone = payload.donorPhone.replace(/[^0-9]/g, '');
-      const response = await fetch(`https://graph.facebook.com/v18.0/${metaPhoneId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${metaToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: cleanPhone,
-          type: 'text',
-          text: { body: messageText },
-        }),
-      });
-
-      rawApiResponse = await response.json();
-      if (response.ok) {
-        apiSuccess = true;
-      }
-    } catch (err: any) {
-      console.warn('Meta WhatsApp API call failed, falling back to simulated engine:', err);
-      rawApiResponse = { error: err.message };
-    }
-  } 
-  // 2. Try Twilio WhatsApp API if credentials present
-  else if (twilioAccountSid && twilioAuthToken) {
-    try {
-      provider = 'Twilio WhatsApp Sandbox';
-      const cleanToPhone = payload.donorPhone.startsWith('whatsapp:')
-        ? payload.donorPhone
-        : `whatsapp:${payload.donorPhone.replace(/[^0-9+]/g, '')}`;
-
-      const cleanFromPhone = twilioWhatsAppNumber.startsWith('whatsapp:')
-        ? twilioWhatsAppNumber
-        : `whatsapp:${twilioWhatsAppNumber}`;
-
-      const formData = new URLSearchParams();
-      formData.append('To', cleanToPhone);
-      formData.append('From', cleanFromPhone);
-      formData.append('Body', messageText);
-
-      const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Basic ' + btoa(`${twilioAccountSid}:${twilioAuthToken}`),
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData.toString(),
-      });
-
-      rawApiResponse = await response.json();
-      if (response.ok) {
-        apiSuccess = true;
-      }
-    } catch (err: any) {
-      console.warn('Twilio WhatsApp API call failed, falling back to sandbox logger:', err);
-      rawApiResponse = { error: err.message };
-    }
-  }
-
-  // Generate log record
   const logRecord: WhatsAppMessageLog = {
     id: `wa-msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     requestId,
@@ -206,28 +257,31 @@ export async function sendWhatsAppEmergencyAlert(
     sentAt: new Date().toISOString(),
     status: 'sent',
     provider,
-    rawApiResponse: rawApiResponse || { status: 'queued', sandbox: true },
+    rawApiResponse,
   };
 
   saveWhatsAppLog(logRecord);
 
   return {
-    success: true,
+    success,
     log: logRecord,
-    message: `WhatsApp message logged and sent via ${provider}`,
+    message: `WhatsApp message dispatched via ${provider}`,
   };
 }
 
-/**
- * Updates donor response to a WhatsApp alert (Accept / Decline)
- */
+// ─── Donor response ───────────────────────────────────────────────────────────
+
+/** Updates donor response to a WhatsApp alert (Accept / Decline) */
 export function updateWhatsAppDonorResponse(
   logIdOrRequestId: string,
   donorResponse: 'accepted' | 'declined'
 ): { success: boolean; log?: WhatsAppMessageLog; message: string } {
   const logs = getWhatsAppLogs();
   const targetLog = logs.find(
-    (l) => l.id === logIdOrRequestId || l.requestId === logIdOrRequestId || l.secureLink.includes(logIdOrRequestId)
+    (l) =>
+      l.id === logIdOrRequestId ||
+      l.requestId === logIdOrRequestId ||
+      l.secureLink.includes(logIdOrRequestId)
   );
 
   if (!targetLog) {
@@ -239,7 +293,6 @@ export function updateWhatsAppDonorResponse(
 
   saveWhatsAppLog(targetLog);
 
-  // Also dispatch a custom browser event so any active dashboard UI auto-updates
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
       new CustomEvent('whatsapp_response_updated', {
@@ -255,10 +308,13 @@ export function updateWhatsAppDonorResponse(
   };
 }
 
-/**
- * Seed initial sample WhatsApp logs if empty
- */
-export function seedInitialWhatsAppLogs(userPhone: string = '+91-9876543210', userName: string = 'Registered Donor'): void {
+// ─── Seed helpers ─────────────────────────────────────────────────────────────
+
+/** Seed initial sample WhatsApp logs if empty */
+export function seedInitialWhatsAppLogs(
+  userPhone = '+91-9876543210',
+  userName = 'Registered Donor'
+): void {
   const existing = getWhatsAppLogs();
   if (existing.length > 0) return;
 
