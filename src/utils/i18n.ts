@@ -1,0 +1,419 @@
+// ── Language metadata ─────────────────────────────────────────────────────────
+export interface Language {
+  code: string;     // BCP-47
+  label: string;    // English name
+  native: string;   // Native script name
+  flag: string;     // emoji flag
+  dir: 'ltr' | 'rtl';
+}
+
+export const LANGUAGES: Language[] = [
+  { code: 'en-IN', label: 'English',  native: 'English',   flag: '🇮🇳', dir: 'ltr' },
+  { code: 'hi-IN', label: 'Hindi',    native: 'हिंदी',      flag: '🇮🇳', dir: 'ltr' },
+  { code: 'ta-IN', label: 'Tamil',    native: 'தமிழ்',      flag: '🇮🇳', dir: 'ltr' },
+  { code: 'te-IN', label: 'Telugu',   native: 'తెలుగు',     flag: '🇮🇳', dir: 'ltr' },
+  { code: 'bn-IN', label: 'Bengali',  native: 'বাংলা',      flag: '🇮🇳', dir: 'ltr' },
+  { code: 'mr-IN', label: 'Marathi',  native: 'मराठी',      flag: '🇮🇳', dir: 'ltr' },
+];
+
+export const DEFAULT_LANG = 'en-IN';
+
+// ── Translation key type ──────────────────────────────────────────────────────
+export type TranslationKey = keyof typeof TRANSLATIONS['en-IN'];
+
+// ── Translation dictionary ────────────────────────────────────────────────────
+export const TRANSLATIONS = {
+  'en-IN': {
+    // UI labels
+    app_name: 'RedPulse',
+    tagline: 'Every second counts. Every drop matters.',
+    donate_blood: 'Donate Blood',
+    request_blood: 'Request Blood',
+    find_donors: 'Find Donors',
+    emergency: 'Emergency',
+    eligible: 'Eligible',
+    not_eligible: 'Not Eligible',
+    check_eligibility: 'Check Eligibility',
+    blood_type: 'Blood Type',
+    units_needed: 'Units Needed',
+    hospital: 'Hospital',
+    location: 'Location',
+    contact: 'Contact',
+    submit: 'Submit',
+    cancel: 'Cancel',
+    close: 'Close',
+    loading: 'Loading…',
+    // Emergency phrases
+    emergency_need: 'Emergency blood needed!',
+    critical_shortage: 'Critical blood shortage alert.',
+    donors_dispatched: 'Donors dispatched. Help is on the way.',
+    sos_activated: 'SOS activated. Emergency services notified.',
+    blood_request_sent: 'Blood request sent successfully.',
+    // Eligibility
+    eligibility_pass: 'You are eligible to donate blood.',
+    eligibility_fail: 'You are not eligible to donate at this time.',
+    eligibility_deferred: 'Your donation is temporarily deferred.',
+    eligibility_review: 'Please consult a doctor before donating.',
+    min_age: 'Minimum age to donate: 18 years.',
+    min_weight: 'Minimum weight to donate: 50 kg.',
+    donation_interval: 'Wait at least 56 days between donations.',
+    // Blood type info
+    universal_donor: 'O- is the universal donor.',
+    universal_recipient: 'AB+ is the universal recipient.',
+    // Donation FAQ
+    faq_how_long: 'The donation process takes about 30–45 minutes.',
+    faq_pain: 'Donation is mostly painless — you may feel a small pinch.',
+    faq_recovery: 'Most donors recover fully within a few hours.',
+    faq_diet: 'Eat iron-rich food and stay hydrated before donating.',
+    faq_frequency: 'You can donate whole blood every 56 days.',
+  },
+
+  'hi-IN': {
+    app_name: 'रेडपल्स',
+    tagline: 'हर पल महत्वपूर्ण है। हर बूंद जरूरी है।',
+    donate_blood: 'रक्तदान करें',
+    request_blood: 'रक्त की मांग करें',
+    find_donors: 'डोनर खोजें',
+    emergency: 'आपातकाल',
+    eligible: 'पात्र',
+    not_eligible: 'अपात्र',
+    check_eligibility: 'पात्रता जांचें',
+    blood_type: 'रक्त समूह',
+    units_needed: 'इकाइयाँ चाहिए',
+    hospital: 'अस्पताल',
+    location: 'स्थान',
+    contact: 'संपर्क',
+    submit: 'सबमिट करें',
+    cancel: 'रद्द करें',
+    close: 'बंद करें',
+    loading: 'लोड हो रहा है…',
+    emergency_need: 'आपातकालीन रक्त की जरूरत है!',
+    critical_shortage: 'गंभीर रक्त की कमी की चेतावनी।',
+    donors_dispatched: 'डोनर भेज दिए गए हैं। मदद आ रही है।',
+    sos_activated: 'SOS सक्रिय। आपातकालीन सेवाएं सूचित।',
+    blood_request_sent: 'रक्त अनुरोध सफलतापूर्वक भेजा गया।',
+    eligibility_pass: 'आप रक्तदान के लिए पात्र हैं।',
+    eligibility_fail: 'आप इस समय रक्तदान के पात्र नहीं हैं।',
+    eligibility_deferred: 'आपका दान अस्थायी रूप से स्थगित है।',
+    eligibility_review: 'दान से पहले डॉक्टर से सलाह लें।',
+    min_age: 'रक्तदान की न्यूनतम आयु: 18 वर्ष।',
+    min_weight: 'रक्तदान के लिए न्यूनतम वजन: 50 किग्रा।',
+    donation_interval: 'दो दानों के बीच कम से कम 56 दिन प्रतीक्षा करें।',
+    universal_donor: 'O- सार्वभौमिक दाता है।',
+    universal_recipient: 'AB+ सार्वभौमिक प्राप्तकर्ता है।',
+    faq_how_long: 'रक्तदान प्रक्रिया में लगभग 30–45 मिनट लगते हैं।',
+    faq_pain: 'दान करना लगभग दर्द रहित है — बस एक छोटी चुभन महसूस हो सकती है।',
+    faq_recovery: 'अधिकांश डोनर कुछ घंटों में पूरी तरह ठीक हो जाते हैं।',
+    faq_diet: 'दान से पहले आयरन युक्त भोजन करें और पानी पीते रहें।',
+    faq_frequency: 'आप हर 56 दिन में पूरे रक्त का दान कर सकते हैं।',
+  },
+
+  'ta-IN': {
+    app_name: 'ரெட்பல்ஸ்',
+    tagline: 'ஒவ்வொரு நொடியும் முக்கியம். ஒவ்வொரு துளியும் அவசியம்.',
+    donate_blood: 'இரத்ததானம் செய்யுங்கள்',
+    request_blood: 'இரத்தம் கேளுங்கள்',
+    find_donors: 'நன்கொடையாளர்களை கண்டறியுங்கள்',
+    emergency: 'அவசரநிலை',
+    eligible: 'தகுதியானவர்',
+    not_eligible: 'தகுதியற்றவர்',
+    check_eligibility: 'தகுதியை சரிபார்க்கவும்',
+    blood_type: 'இரத்த வகை',
+    units_needed: 'தேவையான அலகுகள்',
+    hospital: 'மருத்துவமனை',
+    location: 'இடம்',
+    contact: 'தொடர்பு',
+    submit: 'சமர்ப்பிக்கவும்',
+    cancel: 'ரத்துசெய்',
+    close: 'மூடு',
+    loading: 'ஏற்றுகிறது…',
+    emergency_need: 'அவசர இரத்தம் தேவை!',
+    critical_shortage: 'இரத்தப் பற்றாக்குறை எச்சரிக்கை.',
+    donors_dispatched: 'நன்கொடையாளர்கள் அனுப்பப்பட்டனர். உதவி வருகிறது.',
+    sos_activated: 'SOS செயல்படுத்தப்பட்டது. அவசர சேவைகள் அறிவிக்கப்பட்டன.',
+    blood_request_sent: 'இரத்த கோரிக்கை வெற்றிகரமாக அனுப்பப்பட்டது.',
+    eligibility_pass: 'நீங்கள் இரத்ததானம் செய்ய தகுதியானவர்.',
+    eligibility_fail: 'தற்போது நீங்கள் இரத்ததானம் செய்ய தகுதியற்றவர்.',
+    eligibility_deferred: 'உங்கள் தானம் தற்காலிகமாக ஒத்திவைக்கப்பட்டுள்ளது.',
+    eligibility_review: 'தானம் செய்வதற்கு முன் மருத்துவரை அணுகவும்.',
+    min_age: 'தானம் செய்ய குறைந்தபட்ச வயது: 18 ஆண்டுகள்.',
+    min_weight: 'தானம் செய்ய குறைந்தபட்ச எடை: 50 கிலோ.',
+    donation_interval: 'இரண்டு தானங்களுக்கு இடையே குறைந்தது 56 நாட்கள் காத்திருங்கள்.',
+    universal_donor: 'O- பல்கலை நன்கொடையாளர்.',
+    universal_recipient: 'AB+ பல்கலை பெறுபவர்.',
+    faq_how_long: 'தான செயல்முறை சுமார் 30–45 நிமிடங்கள் ஆகும்.',
+    faq_pain: 'தானம் பெரும்பாலும் வலியற்றது — சிறிய குத்தல் மட்டுமே.',
+    faq_recovery: 'பெரும்பாலான நன்கொடையாளர்கள் சில மணி நேரங்களில் குணமடைகிறார்கள்.',
+    faq_diet: 'தானம் செய்வதற்கு முன் இரும்புச்சத்துள்ள உணவு சாப்பிட்டு தண்ணீர் குடிக்கவும்.',
+    faq_frequency: 'ஒவ்வொரு 56 நாட்களுக்கும் ஒரு முறை முழு இரத்தம் தானம் செய்யலாம்.',
+  },
+
+  'te-IN': {
+    app_name: 'రెడ్‌పల్స్',
+    tagline: 'ప్రతి క్షణం విలువైనది. ప్రతి చుక్క అవసరం.',
+    donate_blood: 'రక్తదానం చేయండి',
+    request_blood: 'రక్తం కోరండి',
+    find_donors: 'దాతలను కనుగొనండి',
+    emergency: 'అత్యవసర పరిస్థితి',
+    eligible: 'అర్హులు',
+    not_eligible: 'అర్హులు కాదు',
+    check_eligibility: 'అర్హతను తనిఖీ చేయండి',
+    blood_type: 'రక్త రకం',
+    units_needed: 'అవసరమైన యూనిట్లు',
+    hospital: 'ఆసుపత్రి',
+    location: 'స్థానం',
+    contact: 'సంప్రదించండి',
+    submit: 'సమర్పించండి',
+    cancel: 'రద్దు చేయండి',
+    close: 'మూసివేయండి',
+    loading: 'లోడ్ అవుతోంది…',
+    emergency_need: 'అత్యవసర రక్తం అవసరం!',
+    critical_shortage: 'తీవ్రమైన రక్తం కొరత హెచ్చరిక.',
+    donors_dispatched: 'దాతలు పంపబడ్డారు. సహాయం వస్తోంది.',
+    sos_activated: 'SOS సక్రియం చేయబడింది. అత్యవసర సేవలు తెలియజేయబడ్డాయి.',
+    blood_request_sent: 'రక్తం అభ్యర్థన విజయవంతంగా పంపబడింది.',
+    eligibility_pass: 'మీరు రక్తదానం చేయడానికి అర్హులు.',
+    eligibility_fail: 'మీరు ప్రస్తుతం రక్తదానం చేయడానికి అర్హులు కాదు.',
+    eligibility_deferred: 'మీ దానం తాత్కాలికంగా వాయిదా పడింది.',
+    eligibility_review: 'దానం చేయడానికి ముందు వైద్యుడిని సంప్రదించండి.',
+    min_age: 'దానం చేయడానికి కనీస వయసు: 18 సంవత్సరాలు.',
+    min_weight: 'దానం చేయడానికి కనీస బరువు: 50 కిలోలు.',
+    donation_interval: 'రెండు దానాల మధ్య కనీసం 56 రోజులు వేచి ఉండండి.',
+    universal_donor: 'O- సార్వత్రిక దాత.',
+    universal_recipient: 'AB+ సార్వత్రిక గ్రహీత.',
+    faq_how_long: 'దాన ప్రక్రియ సుమారు 30–45 నిమిషాలు పడుతుంది.',
+    faq_pain: 'దానం చాలావరకు నొప్పిలేకుండా ఉంటుంది — చిన్న గుచ్చుకోవడం మాత్రమే.',
+    faq_recovery: 'చాలా మంది దాతలు కొన్ని గంటల్లో పూర్తిగా కోలుకుంటారు.',
+    faq_diet: 'దానానికి ముందు ఇనుము అధికంగా ఉన్న ఆహారం తినండి మరియు నీరు తాగండి.',
+    faq_frequency: 'ప్రతి 56 రోజులకు ఒకసారి పూర్తి రక్తం దానం చేయవచ్చు.',
+  },
+
+  'bn-IN': {
+    app_name: 'রেডপালস',
+    tagline: 'প্রতিটি মুহূর্ত গণনা করে। প্রতিটি ফোঁটা গুরুত্বপূর্ণ।',
+    donate_blood: 'রক্তদান করুন',
+    request_blood: 'রক্তের অনুরোধ করুন',
+    find_donors: 'দাতা খুঁজুন',
+    emergency: 'জরুরি অবস্থা',
+    eligible: 'যোগ্য',
+    not_eligible: 'অযোগ্য',
+    check_eligibility: 'যোগ্যতা পরীক্ষা করুন',
+    blood_type: 'রক্তের গ্রুপ',
+    units_needed: 'প্রয়োজনীয় ইউনিট',
+    hospital: 'হাসপাতাল',
+    location: 'অবস্থান',
+    contact: 'যোগাযোগ',
+    submit: 'জমা দিন',
+    cancel: 'বাতিল করুন',
+    close: 'বন্ধ করুন',
+    loading: 'লোড হচ্ছে…',
+    emergency_need: 'জরুরি রক্ত দরকার!',
+    critical_shortage: 'গুরুতর রক্তের ঘাটতির সতর্কতা।',
+    donors_dispatched: 'দাতাদের পাঠানো হয়েছে। সাহায্য আসছে।',
+    sos_activated: 'SOS সক্রিয়। জরুরি সেবা জানানো হয়েছে।',
+    blood_request_sent: 'রক্তের অনুরোধ সফলভাবে পাঠানো হয়েছে।',
+    eligibility_pass: 'আপনি রক্তদানের জন্য যোগ্য।',
+    eligibility_fail: 'আপনি এই মুহূর্তে রক্তদানের জন্য যোগ্য নন।',
+    eligibility_deferred: 'আপনার দান সাময়িকভাবে স্থগিত করা হয়েছে।',
+    eligibility_review: 'দান করার আগে একজন ডাক্তারের পরামর্শ নিন।',
+    min_age: 'দানের জন্য ন্যূনতম বয়স: ১৮ বছর।',
+    min_weight: 'দানের জন্য ন্যূনতম ওজন: ৫০ কেজি।',
+    donation_interval: 'দুটি দানের মধ্যে কমপক্ষে ৫৬ দিন অপেক্ষা করুন।',
+    universal_donor: 'O- সার্বজনীন দাতা।',
+    universal_recipient: 'AB+ সার্বজনীন গ্রহীতা।',
+    faq_how_long: 'দান প্রক্রিয়াটি প্রায় ৩০–৪৫ মিনিট সময় নেয়।',
+    faq_pain: 'দান করা মূলত ব্যথামুক্ত — শুধু একটু ছোট্ট চিমটি অনুভব হতে পারে।',
+    faq_recovery: 'বেশিরভাগ দাতারা কয়েক ঘণ্টার মধ্যে সম্পূর্ণ সুস্থ হয়ে যান।',
+    faq_diet: 'দানের আগে আয়রন সমৃদ্ধ খাবার খান এবং পানি পান করুন।',
+    faq_frequency: 'আপনি প্রতি ৫৬ দিনে একবার পূর্ণ রক্তদান করতে পারেন।',
+  },
+
+  'mr-IN': {
+    app_name: 'रेडपल्स',
+    tagline: 'प्रत्येक क्षण महत्त्वाचा. प्रत्येक थेंब आवश्यक.',
+    donate_blood: 'रक्तदान करा',
+    request_blood: 'रक्ताची मागणी करा',
+    find_donors: 'दाते शोधा',
+    emergency: 'आणीबाणी',
+    eligible: 'पात्र',
+    not_eligible: 'अपात्र',
+    check_eligibility: 'पात्रता तपासा',
+    blood_type: 'रक्त गट',
+    units_needed: 'आवश्यक युनिट्स',
+    hospital: 'रुग्णालय',
+    location: 'स्थान',
+    contact: 'संपर्क',
+    submit: 'सबमिट करा',
+    cancel: 'रद्द करा',
+    close: 'बंद करा',
+    loading: 'लोड होत आहे…',
+    emergency_need: 'आणीबाणीत रक्त हवे आहे!',
+    critical_shortage: 'गंभीर रक्त तुटवड्याचा इशारा.',
+    donors_dispatched: 'दाते पाठवले आहेत. मदत येत आहे.',
+    sos_activated: 'SOS सक्रिय. आणीबाणी सेवा सूचित.',
+    blood_request_sent: 'रक्त विनंती यशस्वीरित्या पाठवली.',
+    eligibility_pass: 'तुम्ही रक्तदानासाठी पात्र आहात.',
+    eligibility_fail: 'सध्या तुम्ही रक्तदानासाठी पात्र नाही.',
+    eligibility_deferred: 'तुमचे दान तात्पुरते पुढे ढकलले आहे.',
+    eligibility_review: 'दान करण्यापूर्वी डॉक्टरांचा सल्ला घ्या.',
+    min_age: 'दानासाठी किमान वय: १८ वर्षे.',
+    min_weight: 'दानासाठी किमान वजन: ५० किलो.',
+    donation_interval: 'दोन दानांमध्ये किमान ५६ दिवस थांबा.',
+    universal_donor: 'O- सार्वत्रिक दाता आहे.',
+    universal_recipient: 'AB+ सार्वत्रिक प्राप्तकर्ता आहे.',
+    faq_how_long: 'दान प्रक्रियेस सुमारे ३०–४५ मिनिटे लागतात.',
+    faq_pain: 'दान करणे बहुतेक वेळा वेदनारहित असते — फक्त एक छोटी टोचणी जाणवेल.',
+    faq_recovery: 'बहुतेक दाते काही तासांत पूर्णपणे बरे होतात.',
+    faq_diet: 'दान करण्यापूर्वी लोहयुक्त अन्न खा आणि पाणी प्या.',
+    faq_frequency: 'तुम्ही दर ५६ दिवसांनी एकदा संपूर्ण रक्तदान करू शकता.',
+  },
+} as const;
+
+// ── Translate helper ──────────────────────────────────────────────────────────
+
+/** Returns the translated string for `key` in `lang`, falling back to English. */
+export function t(key: TranslationKey, lang: string = DEFAULT_LANG): string {
+  const dict = (TRANSLATIONS as any)[lang] ?? TRANSLATIONS['en-IN'];
+  return dict[key] ?? (TRANSLATIONS['en-IN'] as any)[key] ?? key;
+}
+
+/** Returns the Language metadata object for a BCP-47 code. */
+export function getLanguage(code: string): Language {
+  return LANGUAGES.find(l => l.code === code) ?? LANGUAGES[0];
+}
+
+// ── Emergency phrase packs ────────────────────────────────────────────────────
+// Pre-built phrases a patient/donor would say in an emergency, per language.
+
+export interface EmergencyPhrase {
+  id: string;
+  labelKey: TranslationKey;
+  phrases: Record<string, string>;
+}
+
+export const EMERGENCY_PHRASES: EmergencyPhrase[] = [
+  {
+    id: 'need_blood',
+    labelKey: 'emergency_need',
+    phrases: {
+      'en-IN': 'I need blood urgently!',
+      'hi-IN': 'मुझे तुरंत रक्त चाहिए!',
+      'ta-IN': 'எனக்கு உடனடியாக இரத்தம் தேவை!',
+      'te-IN': 'నాకు వెంటనే రక్తం కావాలి!',
+      'bn-IN': 'আমার জরুরিভিত্তিতে রক্ত দরকার!',
+      'mr-IN': 'मला तातडीने रक्त हवे आहे!',
+    },
+  },
+  {
+    id: 'call_ambulance',
+    labelKey: 'sos_activated',
+    phrases: {
+      'en-IN': 'Please call an ambulance immediately.',
+      'hi-IN': 'कृपया तुरंत एम्बुलेंस बुलाएं।',
+      'ta-IN': 'உடனடியாக ஆம்புலன்ஸ் அழையுங்கள்.',
+      'te-IN': 'వెంటనే అంబులెన్స్ పిలవండి.',
+      'bn-IN': 'অবিলম্বে একটি অ্যাম্বুলেন্স ডাকুন।',
+      'mr-IN': 'कृपया ताबडतोब रुग्णवाहिका बोलवा.',
+    },
+  },
+  {
+    id: 'blood_type',
+    labelKey: 'blood_type',
+    phrases: {
+      'en-IN': 'My blood type is O positive.',
+      'hi-IN': 'मेरा रक्त समूह O पॉज़िटिव है।',
+      'ta-IN': 'என் இரத்த வகை O பாசிட்டிவ்.',
+      'te-IN': 'నా రక్త రకం O పాజిటివ్.',
+      'bn-IN': 'আমার রক্তের গ্রুপ O পজিটিভ।',
+      'mr-IN': 'माझा रक्त गट O पॉझिटिव्ह आहे.',
+    },
+  },
+  {
+    id: 'donor_ready',
+    labelKey: 'donate_blood',
+    phrases: {
+      'en-IN': 'I am ready to donate blood right now.',
+      'hi-IN': 'मैं अभी रक्तदान करने के लिए तैयार हूं।',
+      'ta-IN': 'நான் இப்போது இரத்தம் தர தயாராக இருக்கிறேன்.',
+      'te-IN': 'నేను ఇప్పుడే రక్తదానం చేయడానికి సిద్ధంగా ఉన్నాను.',
+      'bn-IN': 'আমি এখনই রক্তদান করতে প্রস্তুত।',
+      'mr-IN': 'मी आत्ता रक्तदान करण्यास तयार आहे.',
+    },
+  },
+  {
+    id: 'where_hospital',
+    labelKey: 'hospital',
+    phrases: {
+      'en-IN': 'Where is the nearest hospital?',
+      'hi-IN': 'सबसे नजदीकी अस्पताल कहाँ है?',
+      'ta-IN': 'அருகில் உள்ள மருத்துவமனை எங்கே?',
+      'te-IN': 'దగ్గరలోని ఆసుపత్రి ఎక్కడ ఉంది?',
+      'bn-IN': 'কাছের হাসপাতাল কোথায়?',
+      'mr-IN': 'जवळचे रुग्णालय कुठे आहे?',
+    },
+  },
+  {
+    id: 'thank_donor',
+    labelKey: 'donors_dispatched',
+    phrases: {
+      'en-IN': 'Thank you for saving my life.',
+      'hi-IN': 'मेरी जान बचाने के लिए धन्यवाद।',
+      'ta-IN': 'என் உயிரை காப்பாற்றியதற்கு நன்றி.',
+      'te-IN': 'నా జీవితాన్ని కాపాడినందుకు ధన్యవాదాలు.',
+      'bn-IN': 'আমার জীবন বাঁচানোর জন্য ধন্যবাদ।',
+      'mr-IN': 'माझा जीव वाचवल्याबद्दल धन्यवाद.',
+    },
+  },
+];
+
+// ── Eligibility Q&A translations ──────────────────────────────────────────────
+
+export interface TranslatedQA {
+  question: string;
+  answer: string;
+}
+
+export const ELIGIBILITY_QA: Record<string, TranslatedQA[]> = {
+  'en-IN': [
+    { question: 'What is the minimum age to donate?', answer: 'You must be at least 18 years old to donate blood. Some centres accept donors up to age 65.' },
+    { question: 'What is the minimum weight?', answer: 'You must weigh at least 50 kg (110 lbs) to donate whole blood safely.' },
+    { question: 'How long between donations?', answer: 'Wait at least 56 days (8 weeks) between whole blood donations. Plasma: 28 days, Platelets: 2 days.' },
+    { question: 'Can I donate after a vaccine?', answer: 'Inactivated vaccines (COVID, flu): no deferral if symptom-free. Live vaccines: 4-week deferral.' },
+    { question: 'Can I donate with diabetes?', answer: 'Diet/tablet-controlled diabetes: usually eligible. Insulin-dependent diabetes: requires physician clearance.' },
+  ],
+  'hi-IN': [
+    { question: 'रक्तदान के लिए न्यूनतम उम्र क्या है?', answer: 'रक्तदान के लिए आपकी उम्र कम से कम 18 वर्ष होनी चाहिए। कुछ केंद्र 65 वर्ष तक के दाताओं को स्वीकार करते हैं।' },
+    { question: 'न्यूनतम वजन कितना होना चाहिए?', answer: 'सुरक्षित रक्तदान के लिए आपका वजन कम से कम 50 किग्रा होना चाहिए।' },
+    { question: 'दो दानों के बीच कितना समय चाहिए?', answer: 'पूर्ण रक्तदान के बीच कम से कम 56 दिन (8 सप्ताह) प्रतीक्षा करें। प्लाज्मा: 28 दिन, प्लेटलेट्स: 2 दिन।' },
+    { question: 'क्या टीके के बाद रक्तदान कर सकते हैं?', answer: 'निष्क्रिय टीके (COVID, फ्लू): लक्षण नहीं हैं तो दान करें। जीवित टीके: 4 सप्ताह रुकें।' },
+    { question: 'मधुमेह में रक्तदान कर सकते हैं?', answer: 'आहार/गोली से नियंत्रित मधुमेह: आमतौर पर पात्र। इंसुलिन-निर्भर मधुमेह: डॉक्टर की अनुमति आवश्यक।' },
+  ],
+  'ta-IN': [
+    { question: 'தானம் செய்ய குறைந்தபட்ச வயது என்ன?', answer: 'இரத்தம் தானம் செய்ய குறைந்தது 18 வயது இருக்க வேண்டும். சில மையங்கள் 65 வயது வரை ஏற்கும்.' },
+    { question: 'குறைந்தபட்ச எடை என்ன?', answer: 'பாதுகாப்பாக இரத்தம் தானம் செய்ய குறைந்தது 50 கிலோ எடை இருக்க வேண்டும்.' },
+    { question: 'இரு தானங்களுக்கு இடையில் எவ்வளவு நேரம்?', answer: 'முழு இரத்த தானங்களுக்கு இடையில் குறைந்தது 56 நாட்கள் காத்திருக்கவும்.' },
+    { question: 'தடுப்பூசிக்கு பிறகு தானம் செய்யலாமா?', answer: 'இயங்காத தடுப்பூசிகள்: அறிகுறி இல்லாவிட்டால் தானம் செய்யலாம். உயிருள்ள தடுப்பூசிகள்: 4 வார தாமதம்.' },
+    { question: 'நீரிழிவு நோய் இருந்தால் தானம் செய்யலாமா?', answer: 'உணவு/மாத்திரை கட்டுப்பாட்டில் உள்ளவர்கள் பொதுவாக தகுதியானவர்கள். இன்சுலின் சார்ந்தவர்கள் மருத்துவர் அனுமதி தேவை.' },
+  ],
+  'te-IN': [
+    { question: 'దానానికి కనీస వయసు ఏమిటి?', answer: 'రక్తదానం చేయడానికి కనీసం 18 సంవత్సరాలు ఉండాలి. కొన్ని కేంద్రాలు 65 వరకు అంగీకరిస్తాయి.' },
+    { question: 'కనీస బరువు ఎంత?', answer: 'సురక్షితంగా రక్తదానం చేయడానికి కనీసం 50 కిలోలు బరువు ఉండాలి.' },
+    { question: 'రెండు దానాల మధ్య ఎంత సమయం?', answer: 'పూర్తి రక్తదానాల మధ్య కనీసం 56 రోజులు వేచి ఉండండి.' },
+    { question: 'వ్యాక్సిన్ తర్వాత దానం చేయవచ్చా?', answer: 'నిష్క్రియ వ్యాక్సిన్లు: లక్షణాలు లేకుంటే దానం చేయవచ్చు. జీవ వ్యాక్సిన్లు: 4 వారాల వేచి.' },
+    { question: 'మధుమేహంతో దానం చేయవచ్చా?', answer: 'ఆహారం/మాత్రలతో నియంత్రణలో ఉన్నవారు సాధారణంగా అర్హులు. ఇన్సులిన్ ఆధారిత: వైద్యుని అనుమతి అవసరం.' },
+  ],
+  'bn-IN': [
+    { question: 'রক্তদানের জন্য ন্যূনতম বয়স কত?', answer: 'রক্তদান করতে কমপক্ষে ১৮ বছর বয়স হতে হবে। কিছু কেন্দ্র ৬৫ বছর পর্যন্ত গ্রহণ করে।' },
+    { question: 'ন্যূনতম ওজন কত হতে হবে?', answer: 'নিরাপদে রক্তদানের জন্য কমপক্ষে ৫০ কেজি ওজন থাকতে হবে।' },
+    { question: 'দুটি দানের মধ্যে কতদিন?', answer: 'পূর্ণ রক্তদানের মধ্যে কমপক্ষে ৫৬ দিন অপেক্ষা করুন।' },
+    { question: 'টিকার পরে দান করা যাবে?', answer: 'নিষ্ক্রিয় টিকা: লক্ষণ না থাকলে করা যাবে। জীবন্ত টিকা: ৪ সপ্তাহ অপেক্ষা করুন।' },
+    { question: 'ডায়াবেটিস থাকলে রক্তদান করা যাবে?', answer: 'খাদ্য/ট্যাবলেটে নিয়ন্ত্রিত: সাধারণত যোগ্য। ইনসুলিন-নির্ভর: চিকিৎসকের অনুমতি প্রয়োজন।' },
+  ],
+  'mr-IN': [
+    { question: 'रक्तदानासाठी किमान वय किती?', answer: 'रक्तदान करण्यासाठी किमान १८ वर्षे वय असणे आवश्यक आहे. काही केंद्रे ६५ वर्षांपर्यंत स्वीकारतात.' },
+    { question: 'किमान वजन किती असावे?', answer: 'सुरक्षितपणे रक्तदान करण्यासाठी किमान ५० किलो वजन असणे आवश्यक आहे.' },
+    { question: 'दोन दानांमध्ये किती दिवस?', answer: 'संपूर्ण रक्तदानांमध्ये किमान ५६ दिवस थांबा.' },
+    { question: 'लसीकरणानंतर दान करता येते का?', answer: 'निष्क्रिय लसी: लक्षणे नसल्यास दान करा. जिवंत लसी: ४ आठवडे थांबा.' },
+    { question: 'मधुमेहात रक्तदान करता येते का?', answer: 'आहार/गोळ्यांनी नियंत्रित: सामान्यतः पात्र. इन्सुलिन-अवलंबित: डॉक्टरांची परवानगी आवश्यक.' },
+  ],
+};
