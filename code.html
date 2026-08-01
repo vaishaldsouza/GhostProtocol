@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RedPulse AI | AI-Powered Emergency Blood Response</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#221a19",
+                    "inverse-surface": "#213145",
+                    "on-tertiary-fixed-variant": "#4f4443",
+                    "tertiary-fixed": "#efdfdd",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-tint": "#bb171c",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-surface": "#0b1c30",
+                    "surface-container": "#e5eeff",
+                    "background": "#f8f9ff",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#eff4ff",
+                    "on-secondary-container": "#636263",
+                    "inverse-primary": "#ffb4ac",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#cbdbf5",
+                    "error": "#ba1a1a",
+                    "surface-variant": "#d3e4fe",
+                    "secondary-fixed": "#e5e2e3",
+                    "tertiary": "#655958",
+                    "surface": "#f8f9ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "secondary": "#5f5e5f",
+                    "primary-fixed": "#ffdad6",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed-dim": "#c8c6c7",
+                    "primary-container": "#db322f",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed-variant": "#474647",
+                    "outline": "#906f6c",
+                    "primary": "#b7131a",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#ffb4ac",
+                    "on-tertiary-container": "#fffbff",
+                    "on-primary-fixed": "#410002",
+                    "on-surface-variant": "#5b403d",
+                    "on-secondary-fixed": "#1b1b1c",
+                    "tertiary-fixed-dim": "#d3c3c1",
+                    "on-background": "#0b1c30",
+                    "outline-variant": "#e4beb9",
+                    "on-primary-container": "#fffbff",
+                    "secondary-container": "#e2dfe0",
+                    "surface-container-high": "#dce9ff",
+                    "tertiary-container": "#7e7270",
+                    "on-primary-fixed-variant": "#93000d",
+                    "surface-bright": "#f8f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "20px",
+                    "lg": "20px",
+                    "xl": "24px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "48px",
+                    "xl": "40px",
+                    "margin-mobile": "16px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "unit": "4px",
+                    "xs": "4px",
+                    "gutter": "24px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "h1": ["Poppins"],
+                    "h3": ["Poppins"],
+                    "body-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "h1-mobile": ["Poppins"],
+                    "h2": ["Poppins"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "h3": ["24px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["13px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "h1-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "h2": ["32px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        }
+        .dark .glass-card {
+            background: rgba(33, 49, 69, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .pulse-badge {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .pulse-badge::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #b7131a;
+            border-radius: 50%;
+            right: -12px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(183, 19, 26, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(183, 19, 26, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(183, 19, 26, 0); }
+        }
+        .reveal { opacity: 0; transform: translateY(20px); transition: all 0.6s ease-out; }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-8px); }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
+<!-- TopAppBar Navigation Shell -->
+<header class="sticky top-0 w-full z-[100] bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 shadow-sm">
+<nav class="flex justify-between items-center px-margin-desktop py-md max-w-full">
+<div class="flex items-center gap-md">
+<img alt="RedPulse AI Logo" class="h-10 w-10 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByVPF8IR3tbwhc1kt_71tEAiXWkIsmkJ8Ah8k7R9UXvt5T7jDsLzwhHP8z6HqqmkdmL5BOCkLvT2QSK0D0Q-6A4ytZclyURxSobvecbQyFC8CzCRiFJDG5dpDU7yIMCi8sBudHLqNtKV0gos19Gx4KF18BOsWPOABI-jcYP4ZoNNpxehlw12Ombd-vY8RSvVut9UCBofFHt7MALniAselsxyfchGl6pTaApvg9sklKICg3yyMvCqIU"/>
+<span class="font-h2 text-h2 font-bold text-primary dark:text-inverse-primary tracking-tight">RedPulse AI</span>
+</div>
+<div class="hidden md:flex items-center gap-xl">
+<a class="text-primary dark:text-inverse-primary font-semibold border-b-2 border-primary" href="#">Home</a>
+<a class="text-secondary dark:text-secondary-fixed transition-colors hover:text-primary dark:hover:text-primary-fixed-dim" href="#">Features</a>
+<a class="text-secondary dark:text-secondary-fixed transition-colors hover:text-primary dark:hover:text-primary-fixed-dim" href="#">Donors</a>
+<a class="text-secondary dark:text-secondary-fixed transition-colors hover:text-primary dark:hover:text-primary-fixed-dim" href="#">Clinical Trials</a>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-2 text-secondary hover:bg-surface-container rounded-full transition-all active:scale-95" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-symbols-outlined">dark_mode</span>
+</button>
+<button class="px-lg py-sm font-semibold text-primary border border-primary rounded-full hover:bg-primary-fixed transition-all active:scale-95">Login</button>
+<button class="px-lg py-sm font-semibold bg-primary text-on-primary rounded-full hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95">Get Started</button>
+</div>
+</nav>
+</header>
+<main>
+<!-- Hero Section -->
+<section class="relative min-h-[90vh] flex items-center overflow-hidden pt-xl">
+<div class="absolute inset-0 z-0 opacity-40 dark:opacity-20 pointer-events-none">
+<!-- STITCH_THREEJS_START:ANIMATION_2 class="absolute inset-0 w-full h-full" -->
+<div class="absolute inset-0 w-full h-full" style="display:block;">
+<script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+<div id="threejs-container-ANIMATION_2" style="width:100%;height:100%"></div>
+<script>
+(function() {
+  const container = document.getElementById('threejs-container-ANIMATION_2');
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const width = container.clientWidth || window.innerWidth;
+const height = container.clientHeight || window.innerHeight;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+renderer.setSize(width, height);
+renderer.setPixelRatio(window.devicePixelRatio);
+container.appendChild(renderer.domElement);
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+const pointLight = new THREE.PointLight(0xe53935, 1.5);
+pointLight.position.set(5, 5, 5);
+scene.add(pointLight);
+
+// Central Blood Drop (Compound Geometry)
+const bloodDropGroup = new THREE.Group();
+
+const sphereGeom = new THREE.SphereGeometry(1, 32, 32);
+const coneGeom = new THREE.ConeGeometry(1, 1.5, 32);
+const material = new THREE.MeshPhongMaterial({ 
+    color: 0xe53935, 
+    shininess: 100, 
+    specular: 0xffffff,
+    transparent: true,
+    opacity: 0.9 
+});
+
+const sphere = new THREE.Mesh(sphereGeom, material);
+const cone = new THREE.Mesh(coneGeom, material);
+cone.position.y = 0.8;
+bloodDropGroup.add(sphere);
+bloodDropGroup.add(cone);
+scene.add(bloodDropGroup);
+
+// ECG Line (Animated)
+const linePoints = [];
+for (let i = 0; i < 50; i++) {
+    linePoints.push(new THREE.Vector3((i - 25) * 0.2, 0, 0));
+}
+const lineGeom = new THREE.BufferGeometry().setFromPoints(linePoints);
+const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+const ecgLine = new THREE.Line(lineGeom, lineMat);
+ecgLine.position.z = 1.2;
+scene.add(ecgLine);
+
+// Nodes
+const nodeGroup = new THREE.Group();
+const nodeLabels = ['Hospitals', 'Blood Banks', 'Recipients', 'Donors'];
+const nodePoints = [
+    new THREE.Vector3(2.5, 2, 0),
+    new THREE.Vector3(-2.5, 2, 0),
+    new THREE.Vector3(2.5, -2, 0),
+    new THREE.Vector3(-2.5, -2, 0)
+];
+
+nodePoints.forEach((pos, i) => {
+    const nodeGeom = new THREE.SphereGeometry(0.3, 16, 16);
+    const nodeMat = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xe53935, emissiveIntensity: 0.5 });
+    const node = new THREE.Mesh(nodeGeom, nodeMat);
+    node.position.copy(pos);
+    nodeGroup.add(node);
+    
+    // Connection line to center
+    const points = [new THREE.Vector3(0,0,0), pos];
+    const connGeom = new THREE.BufferGeometry().setFromPoints(points);
+    const connMat = new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.2, gapSize: 0.1, transparent: true, opacity: 0.3 });
+    const conn = new THREE.Line(connGeom, connMat);
+    conn.computeLineDistances();
+    scene.add(conn);
+});
+scene.add(nodeGroup);
+
+camera.position.z = 7;
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    const time = Date.now() * 0.001;
+    
+    // Float blood drop
+    bloodDropGroup.position.y = Math.sin(time) * 0.2;
+    bloodDropGroup.rotation.y += 0.01;
+    
+    // Pulsing effect
+    const pulse = 1 + Math.sin(time * 3) * 0.05;
+    bloodDropGroup.scale.set(pulse, pulse, pulse);
+    
+    // Update ECG Line
+    const positions = ecgLine.geometry.attributes.position.array;
+    for (let i = 0; i < 50; i++) {
+        let y = 0;
+        const x = (i - 25) * 0.2;
+        // Simulate heart beat spike
+        if (Math.abs((x + (time % 2) * 5 - 5)) < 0.5) {
+            y = Math.sin((x + time * 5) * 10) * 0.5;
+        }
+        positions[i * 3 + 1] = y;
+    }
+    ecgLine.geometry.attributes.position.needsUpdate = true;
+    
+    // Rotate nodes
+    nodeGroup.rotation.z += 0.002;
+    
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+});
+
+animate();
+})();
+</script>
+</div>
+<!-- STITCH_THREEJS_END:ANIMATION_2 -->
+</div>
+<div class="relative z-10 w-full px-margin-desktop grid grid-cols-1 md:grid-cols-2 gap-xl items-center">
+<div class="flex flex-col gap-lg items-start">
+<div class="bg-primary-fixed text-on-primary-fixed-variant px-md py-xs rounded-full font-label-sm pulse-badge uppercase tracking-widest">
+                        AI-Powered Emergency Response
+                    </div>
+<h1 class="font-h1 text-h1-mobile md:text-h1 max-w-xl">
+                        Save Lives with <span class="text-primary italic">Intelligent Matching</span>
+</h1>
+<p class="text-body-lg text-secondary dark:text-secondary-fixed-dim max-w-lg">
+                        RedPulse AI bridges the gap between critical blood shortages and life-saving donations using predictive neural networks and real-time emergency routing.
+                    </p>
+<div class="flex flex-wrap gap-md mt-md">
+<button class="px-xl py-md bg-primary text-on-primary font-h3 text-body-md rounded-full hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-95 flex items-center gap-sm">
+                            Start Saving Lives <span class="material-symbols-outlined">trending_flat</span>
+</button>
+<button class="px-xl py-md border-2 border-on-background/20 dark:border-white/20 text-on-background dark:text-white font-h3 text-body-md rounded-full hover:bg-surface-container transition-all active:scale-95 flex items-center gap-sm">
+                            Watch Demo <span class="material-symbols-outlined">play_circle</span>
+</button>
+</div>
+</div>
+<div class="hidden md:block">
+<div class="relative w-full aspect-square glass-card rounded-xl p-lg overflow-hidden flex items-center justify-center">
+<!-- Artificial visual for content richness -->
+<div class="absolute top-0 left-0 w-full h-full opacity-10 bg-gradient-to-br from-primary to-transparent"></div>
+<div class="text-center">
+<span class="material-symbols-outlined text-[120px] text-primary/20 animate-pulse">monitor_heart</span>
+<div class="mt-md space-y-md">
+<div class="h-2 w-48 bg-primary/20 rounded-full mx-auto"></div>
+<div class="h-2 w-32 bg-primary/10 rounded-full mx-auto"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats Section -->
+<section class="py-xl px-margin-desktop">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg reveal">
+<div class="glass-card p-lg rounded-xl flex flex-col items-center justify-center text-center hover-lift border-t-4 border-t-primary">
+<span class="font-h1 text-primary text-h2 mb-xs">10K+</span>
+<span class="text-secondary dark:text-secondary-fixed uppercase tracking-wider font-label-sm">Active Donors</span>
+</div>
+<div class="glass-card p-lg rounded-xl flex flex-col items-center justify-center text-center hover-lift border-t-4 border-t-primary">
+<span class="font-h1 text-primary text-h2 mb-xs">&lt; 2 min</span>
+<span class="text-secondary dark:text-secondary-fixed uppercase tracking-wider font-label-sm">Response Time</span>
+</div>
+<div class="glass-card p-lg rounded-xl flex flex-col items-center justify-center text-center hover-lift border-t-4 border-t-primary">
+<span class="font-h1 text-primary text-h2 mb-xs">95%</span>
+<span class="text-secondary dark:text-secondary-fixed uppercase tracking-wider font-label-sm">Matching Accuracy</span>
+</div>
+</div>
+</section>
+<!-- Feature Grid -->
+<section class="py-xl px-margin-desktop bg-surface-container-low dark:bg-transparent">
+<div class="mb-xl text-center max-w-2xl mx-auto reveal">
+<h2 class="font-h2 text-h2 mb-md">Advanced Clinical <span class="text-primary">Intelligence</span></h2>
+<p class="text-secondary dark:text-secondary-fixed-dim">Our platform integrates directly with hospital HIS systems to provide proactive emergency logistics.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- AI Smart Matching -->
+<div class="glass-card p-lg rounded-xl hover-lift reveal transition-all duration-500">
+<div class="bg-primary/10 w-14 h-14 rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-primary text-3xl">hub</span>
+</div>
+<h3 class="font-h3 text-h3 mb-sm">AI Smart Matching</h3>
+<p class="text-secondary dark:text-secondary-fixed-dim">Neural networks analyze donor blood profiles against recipient urgency for the perfect clinical match.</p>
+</div>
+<!-- Shortage Prediction -->
+<div class="glass-card p-lg rounded-xl hover-lift reveal transition-all duration-500 delay-75">
+<div class="bg-primary/10 w-14 h-14 rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-primary text-3xl">query_stats</span>
+</div>
+<h3 class="font-h3 text-h3 mb-sm">Shortage Prediction</h3>
+<p class="text-secondary dark:text-secondary-fixed-dim">Predictive modeling forecasts supply dips up to 14 days in advance, preventing critical system failures.</p>
+</div>
+<!-- Emergency Assistant -->
+<div class="glass-card p-lg rounded-xl hover-lift reveal transition-all duration-500 delay-150">
+<div class="bg-primary/10 w-14 h-14 rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-primary text-3xl">medical_services</span>
+</div>
+<h3 class="font-h3 text-h3 mb-sm">Emergency Assistant</h3>
+<p class="text-secondary dark:text-secondary-fixed-dim">Automated alert system that triggers multi-channel donor notifications during trauma-level emergencies.</p>
+</div>
+<!-- Eligibility AI -->
+<div class="glass-card p-lg rounded-xl hover-lift reveal transition-all duration-500 delay-200">
+<div class="bg-primary/10 w-14 h-14 rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-primary text-3xl">verified_user</span>
+</div>
+<h3 class="font-h3 text-h3 mb-sm">Eligibility AI</h3>
+<p class="text-secondary dark:text-secondary-fixed-dim">Smart screening tools that analyze donor medical history to ensure 100% safety and clinical compliance.</p>
+</div>
+<!-- Voice Assistant -->
+<div class="glass-card p-lg rounded-xl hover-lift reveal transition-all duration-500 delay-300">
+<div class="bg-primary/10 w-14 h-14 rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-primary text-3xl">settings_voice</span>
+</div>
+<h3 class="font-h3 text-h3 mb-sm">Voice Assistant</h3>
+<p class="text-secondary dark:text-secondary-fixed-dim">Seamless interaction for medical staff to request blood units through hands-free AI voice integration.</p>
+</div>
+<!-- Smart Routing -->
+<div class="glass-card p-lg rounded-xl hover-lift reveal transition-all duration-500 delay-400">
+<div class="bg-primary/10 w-14 h-14 rounded-lg flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-primary text-3xl">near_me</span>
+</div>
+<h3 class="font-h3 text-h3 mb-sm">Smart Routing</h3>
+<p class="text-secondary dark:text-secondary-fixed-dim">Dynamic logistics optimization ensures life-saving units reach operating rooms via the fastest secure routes.</p>
+</div>
+</div>
+</section>
+<!-- CTA Banner -->
+<section class="px-margin-desktop py-xl">
+<div class="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary to-primary-container p-xl text-center flex flex-col items-center justify-center min-h-[400px]">
+<div class="absolute inset-0 opacity-10">
+<div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 40px 40px;"></div>
+</div>
+<h2 class="font-h1 text-h1 text-on-primary mb-lg relative z-10">Every Drop Counts</h2>
+<p class="text-body-lg text-on-primary/80 max-w-2xl mb-xl relative z-10">Join a network of thousands who are making a difference today. Your donation is powered by intelligence to ensure it saves the most urgent life first.</p>
+<button class="relative z-10 px-xl py-md bg-white text-primary font-h3 text-body-md rounded-full shadow-2xl hover:scale-105 transition-all active:scale-95 flex items-center gap-sm">
+                    Register Now <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface dark:bg-inverse-surface border-t border-black/5 dark:border-white/5 rounded-t-xl mt-xl">
+<div class="flex flex-col md:flex-row justify-between items-start px-margin-desktop py-xl gap-lg max-w-full">
+<div class="flex flex-col gap-md max-w-xs">
+<div class="flex items-center gap-md">
+<img alt="RedPulse AI Logo" class="h-8 w-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByVPF8IR3tbwhc1kt_71tEAiXWkIsmkJ8Ah8k7R9UXvt5T7jDsLzwhHP8z6HqqmkdmL5BOCkLvT2QSK0D0Q-6A4ytZclyURxSobvecbQyFC8CzCRiFJDG5dpDU7yIMCi8sBudHLqNtKV0gos19Gx4KF18BOsWPOABI-jcYP4ZoNNpxehlw12Ombd-vY8RSvVut9UCBofFHt7MALniAselsxyfchGl6pTaApvg9sklKICg3yyMvCqIU"/>
+<span class="font-h3 text-h3 font-bold text-primary dark:text-inverse-primary">RedPulse AI</span>
+</div>
+<p class="text-body-md text-secondary dark:text-on-secondary-fixed-variant">
+                    Pioneering the future of medical logistics through intelligent neural networking and empathetic design.
+                </p>
+<p class="font-body-md text-body-md text-secondary dark:text-on-secondary-fixed-variant mt-md">
+                    © 2024 RedPulse AI. Clinical Excellence through Intelligence.
+                </p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-xl">
+<div class="flex flex-col gap-sm">
+<h4 class="font-bold text-on-surface dark:text-white mb-xs">Platform</h4>
+<a class="text-secondary dark:text-on-secondary-fixed-variant hover:text-primary transition-colors" href="#">Features</a>
+<a class="text-secondary dark:text-on-secondary-fixed-variant hover:text-primary transition-colors" href="#">Security</a>
+<a class="text-secondary dark:text-on-secondary-fixed-variant hover:text-primary transition-colors" href="#">Clinical Trials</a>
+</div>
+<div class="flex flex-col gap-sm">
+<h4 class="font-bold text-on-surface dark:text-white mb-xs">Resources</h4>
+<a class="text-secondary dark:text-on-secondary-fixed-variant hover:text-primary transition-colors" href="#">Documentation</a>
+<a class="text-secondary dark:text-on-secondary-fixed-variant hover:text-primary transition-colors" href="#">API Status</a>
+<a class="text-secondary dark:text-on-secondary-fixed-variant hover:text-primary transition-colors" href="#">Partners</a>
+</div>
+<div class="flex flex-col gap-sm">
+<h4 class="font-bold text-on-surface dark:text-white mb-xs">Legal</h4>
+<a class="text-secondary dark:text-on-secondary-fixed-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-secondary dark:text-on-secondary-fixed-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+</div>
+</div>
+</div>
+</footer>
+<script>
+        // Reveal Animations on Scroll
+        const reveal = () => {
+            const reveals = document.querySelectorAll('.reveal');
+            reveals.forEach(element => {
+                const windowHeight = window.innerHeight;
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                if (elementTop < windowHeight - elementVisible) {
+                    element.classList.add('active');
+                }
+            });
+        }
+        window.addEventListener('scroll', reveal);
+        // Initial check
+        reveal();
+
+        // Micro-interactions for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.classList.add('scale-95'));
+            btn.addEventListener('mouseup', () => btn.classList.remove('scale-95'));
+            btn.addEventListener('mouseleave', () => btn.classList.remove('scale-95'));
+        });
+    </script>
+</body></html>
