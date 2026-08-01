@@ -415,11 +415,151 @@ If no response after 10 seconds, say: "We did not receive your response. We will
   }
 });
 
+// ─── Murf AI Text-to-Speech Endpoint ───────────────────────────────────────────────
+app.post('/api/voice/murf', async (req: Request, res: Response) => {
+  const {
+    text,
+    voiceId,
+    // Runtime credential override
+    murfApiKey,
+  } = req.body as {
+    text: string;
+    voiceId?: string;
+    murfApiKey?: string;
+  };
+
+  if (!text) {
+    return res.status(400).json({ success: false, error: 'text is required' });
+  }
+
+  const resolvedKey = murfApiKey || process.env.MURF_API_KEY || process.env.VITE_MURF_API_KEY || '';
+  const resolvedVoiceId = voiceId || process.env.MURF_VOICE_ID || process.env.VITE_MURF_VOICE_ID || 'en-US-marcus';
+
+  if (!resolvedKey) {
+    // Simulation mode — no Murf AI key
+    return res.json({
+      success: true,
+      provider: 'Murf AI Simulator',
+      audioUrl: null,
+      note: 'No Murf AI API key configured. Audio generation simulated locally. Get key at https://murf.ai/',
+    });
+  }
+
+  try {
+    const murfRes = await fetch('https://api.murf.ai/v1/speech/generate', {
+      method: 'POST',
+      headers: {
+        'api-key': resolvedKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        voiceId: resolvedVoiceId,
+        format: 'MP3',
+        sampleRate: 24000,
+      }),
+    });
+
+    const data = await murfRes.json() as { audioUrl?: string; error?: string };
+
+    if (!murfRes.ok) {
+      return res.status(murfRes.status).json({
+        success: false,
+        provider: 'Murf AI',
+        error: data?.error || 'Murf AI API error',
+        raw: data,
+      });
+    }
+
+    console.log(`[Murf AI] 🎤 Audio generated for text: "${text.substring(0, 50)}..."`);
+    return res.json({
+      success: true,
+      provider: 'Murf AI',
+      audioUrl: data.audioUrl,
+      voiceId: resolvedVoiceId,
+    });
+  } catch (err: any) {
+    console.error('[Murf AI] Generation error:', err.message);
+    return res.status(500).json({ success: false, provider: 'Murf AI', error: err.message });
+  }
+});
+
+// ─── Gemini AI Chat Endpoint ───────────────────────────────────────────────────────
+app.post('/api/voice/gemini', async (req: Request, res: Response) => {
+  const {
+    text,
+    context,
+    // Runtime credential override
+    geminiApiKey,
+  } = req.body as {
+    text: string;
+    context?: string;
+    geminiApiKey?: string;
+  };
+
+  if (!text) {
+    return res.status(400).json({ success: false, error: 'text is required' });
+  }
+
+  const resolvedKey = geminiApiKey || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
+
+  if (!resolvedKey) {
+    // Simulation mode — no Gemini API key
+    return res.json({
+      success: true,
+      provider: 'Gemini AI Simulator',
+      response: 'I heard: "' + text + '". This is a simulated response. Configure Gemini API key for AI-powered responses.',
+      note: 'No Gemini API key configured. Get key at https://ai.google.dev/',
+    });
+  }
+
+  try {
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${resolvedKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: (context || 'You are a helpful medical assistant for RedPulse AI, a blood donation platform. ') + '\n\nUser: ' + text
+          }]
+        }]
+      }),
+    });
+
+    const data = await geminiRes.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+
+    if (!geminiRes.ok) {
+      return res.status(geminiRes.status).json({
+        success: false,
+        provider: 'Gemini AI',
+        error: data?.error?.message || 'Gemini API error',
+        raw: data,
+      });
+    }
+
+    const response = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated';
+
+    console.log(`[Gemini AI] 🤖 Response generated for: "${text.substring(0, 50)}..."`);
+    return res.json({
+      success: true,
+      provider: 'Gemini 2.5 Flash',
+      response,
+    });
+  } catch (err: any) {
+    console.error('[Gemini AI] Generation error:', err.message);
+    return res.status(500).json({ success: false, provider: 'Gemini AI', error: err.message });
+  }
+});
+
 const PORT = process.env.WHATSAPP_SERVER_PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ RedPulse API Gateway running on http://localhost:${PORT}`);
   console.log(`   📧 Email: /api/email/send  (Gmail SMTP)`);
   console.log(`   📞 Voice: /api/voice/call  (Bland.ai free tier)`);
+  console.log(`   🎤 TTS: /api/voice/murf  (Murf AI)`);
+  console.log(`   🤖 AI: /api/voice/gemini  (Gemini 2.5 Flash)`);
   console.log(`   💬 WhatsApp: /api/whatsapp/send  (Baileys/Meta/Twilio)`);
 });
 

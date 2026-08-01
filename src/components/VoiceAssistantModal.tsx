@@ -8,6 +8,7 @@ import {
   VoiceSession, VoiceCommand, RecognitionStatus,
   speak, stopSpeaking, isSpeechRecognitionSupported, isSpeechSynthesisSupported,
   SUPPORTED_LANGUAGES, generateWaveformBars, COMMAND_PATTERNS,
+  askAiVoiceAssistant, stopMurfAudio, playMurfAudio, askGeminiAI
 } from '../utils/voiceAssistant';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -187,6 +188,10 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
   const [errorMsg,        setErrorMsg]         = useState('');
   const [isSupported,     setIsSupported]      = useState(true);
   const [showShortcuts,   setShowShortcuts]    = useState(true);
+  const [useMurfAI,       setUseMurfAI]        = useState(false);
+  const [useGeminiAI,     setUseGeminiAI]      = useState(false);
+  const [murfVoiceId,     setMurfVoiceId]      = useState('');
+  const [isAiSpeaking,    setIsAiSpeaking]     = useState(false);
 
   const sessionRef  = useRef<VoiceSession | null>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
@@ -208,26 +213,51 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     if (!isOpen) {
       sessionRef.current?.stop();
       stopSpeaking();
+      stopMurfAudio();
       setStatus('idle');
       setInterimText('');
+      setIsAiSpeaking(false);
     }
   }, [isOpen]);
 
-  // ── Speak helper (respects mute) ─────────────────────────────────────────
-  const say = useCallback((text: string, onEnd?: () => void) => {
+  // ── Speak helper (respects mute and AI integration) ───────────────────────
+  const say = useCallback(async (text: string, onEnd?: () => void) => {
     if (muteAudio || !isSpeechSynthesisSupported()) {
       onEnd?.();
       return;
     }
+    
     setStatus('speaking');
-    speak(text, {
-      lang: selectedLang,
-      onEnd: () => {
-        setStatus('idle');
-        onEnd?.();
-      },
-    });
-  }, [muteAudio, selectedLang]);
+    setIsAiSpeaking(true);
+
+    try {
+      if (useMurfAI) {
+        // Use Murf AI for professional voice
+        await playMurfAudio(text, { voiceId: murfVoiceId || undefined });
+      } else {
+        // Use browser TTS
+        speak(text, {
+          lang: selectedLang,
+          onEnd: () => {
+            setStatus('idle');
+            setIsAiSpeaking(false);
+            onEnd?.();
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error speaking:', error);
+      // Fallback to browser TTS
+      speak(text, {
+        lang: selectedLang,
+        onEnd: () => {
+          setStatus('idle');
+          setIsAiSpeaking(false);
+          onEnd?.();
+        },
+      });
+    }
+  }, [muteAudio, selectedLang, useMurfAI, murfVoiceId]);
 
   // ── Execute voice command action ──────────────────────────────────────────
   const executeAction = useCallback((cmd: VoiceCommand) => {
@@ -261,7 +291,9 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
       case 'stop':
         sessionRef.current?.stop();
         stopSpeaking();
+        stopMurfAudio();
         setStatus('idle');
+        setIsAiSpeaking(false);
         say('Voice assistant stopped.');
         break;
       default:
@@ -290,7 +322,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
           setInterimText(text);
         }
       },
-      onCommand: (cmd, response) => {
+      onCommand: async (cmd, response) => {
         setStatus('processing');
         setInterimText('');
 
@@ -302,18 +334,34 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
           timestamp: Date.now(),
         }]);
 
+        // If unknown command and Gemini AI is enabled, use AI to generate response
+        let finalResponse = response;
+        if (cmd.id === 'unknown' && useGeminiAI) {
+          try {
+            const geminiResult = await askGeminiAI(cmd.transcript, {
+              context: 'You are a helpful medical assistant for RedPulse AI, a blood donation platform. Help users with their questions about blood donation, eligibility, and emergency requests.'
+            });
+            if (geminiResult.success && geminiResult.response) {
+              finalResponse = geminiResult.response;
+            }
+          } catch (error) {
+            console.error('Gemini AI error:', error);
+            // Keep original response
+          }
+        }
+
         // Short processing delay for UX
         setTimeout(() => {
           // Add assistant response
           setHistory(h => [...h, {
             id:        `a-${Date.now()}`,
             role:      'assistant',
-            text:      response,
+            text:      finalResponse,
             commandId: cmd.id,
             timestamp: Date.now(),
           }]);
 
-          say(response, () => executeAction(cmd));
+          say(finalResponse, () => executeAction(cmd));
         }, 300);
       },
       onError: (err) => {
@@ -327,14 +375,16 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     });
 
     session.start();
-  }, [isSupported, selectedLang, say, executeAction, status]);
+  }, [isSupported, selectedLang, say, executeAction, status, useGeminiAI]);
 
   // ── Stop listening ────────────────────────────────────────────────────────
   const stopListening = useCallback(() => {
     sessionRef.current?.stop();
     sessionRef.current = null;
     stopSpeaking();
+    stopMurfAudio();
     setStatus('idle');
+    setIsAiSpeaking(false);
     setInterimText('');
   }, []);
 
@@ -398,6 +448,22 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             >
               <Globe className="w-4 h-4" />
             </button>
+            {/* Murf AI toggle */}
+            <button
+              onClick={() => setUseMurfAI(v => !v)}
+              className={`p-1.5 rounded-full hover:bg-white/20 transition ${useMurfAI ? 'text-purple-400' : 'text-slate-300'}`}
+              title="Toggle Murf AI Voice"
+            >
+              <Volume2 className="w-4 h-4" />
+            </button>
+            {/* Gemini AI toggle */}
+            <button
+              onClick={() => setUseGeminiAI(v => !v)}
+              className={`p-1.5 rounded-full hover:bg-white/20 transition ${useGeminiAI ? 'text-green-400' : 'text-slate-300'}`}
+              title="Toggle Gemini AI Responses"
+            >
+              <Activity className="w-4 h-4" />
+            </button>
             <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/20 text-slate-300 transition">
               <X className="w-5 h-5" />
             </button>
@@ -425,6 +491,16 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
 
         {/* ── Body ── */}
         <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
+          
+          {/* AI Settings */}
+          {(useMurfAI || useGeminiAI) && (
+            <div className="px-4 py-2 bg-purple-50 dark:bg-purple-950/40 border-b border-purple-200 dark:border-purple-800 flex items-center gap-2 shrink-0">
+              <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span className="text-xs font-bold text-purple-800 dark:text-purple-300">
+                AI Enhanced: {useMurfAI && 'Murf Voice'} {useMurfAI && useGeminiAI && '+'} {useGeminiAI && 'Gemini Responses'}
+              </span>
+            </div>
+          )}
 
           {/* Unsupported warning */}
           {!isSupported && (
@@ -452,9 +528,21 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
             <Waveform active={isListening} />
             <div className="flex items-center justify-between mt-2">
               <StatusBadge status={status} />
-              <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                {SUPPORTED_LANGUAGES.find(l => l.code === selectedLang)?.label ?? 'English'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                  {SUPPORTED_LANGUAGES.find(l => l.code === selectedLang)?.label ?? 'English'}
+                </span>
+                {useMurfAI && (
+                  <span className="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-[9px] font-bold rounded-full">
+                    Murf AI
+                  </span>
+                )}
+                {useGeminiAI && (
+                  <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-[9px] font-bold rounded-full">
+                    Gemini AI
+                  </span>
+                )}
+              </div>
             </div>
             {/* Interim transcript */}
             {interimText && (

@@ -8,6 +8,8 @@ build/
 dist/
 dist-ssr/
 *.local
+.vite/
+
 
 # Environment variables — NEVER commit real credentials
 .env

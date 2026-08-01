@@ -46,7 +46,7 @@ interface RoleDashboardsProps {
   user?: User;
   onUpdateUser?: (updated: User) => void;
   onLogout: () => void;
-  onOpenEmergencyModal: () => void;
+  onOpenEmergencyModal?: () => void;
   onOpenEligibilityModal?: () => void;
   onOpenVoiceAssistant?: () => void;
   onOpenWhatsAppModal?: () => void;
@@ -72,7 +72,9 @@ export const RoleDashboards: React.FC<RoleDashboardsProps> = ({
   isDarkMode = false,
   setIsDarkMode,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'drives' | 'history' | 'certificate'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'drives' | 'history' | 'certificate'>(
+    role === 'patient' || role === 'recipient' ? 'overview' : 'overview'
+  );
   const [selectedCertRecord, setSelectedCertRecord] = useState<DonationRecord | null>(null);
 
   // Local user state initialized from prop or realistic default
@@ -157,54 +159,69 @@ export const RoleDashboards: React.FC<RoleDashboardsProps> = ({
               </button>
             )}
 
-            <button
-              onClick={onOpenEmergencyModal}
-              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5"
-            >
-              <Bell className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">AI SOS Dispatch</span>
-              <span className="sm:hidden">SOS</span>
-            </button>
+            {/* AI SOS Dispatch - not for donors */}
+            {role !== 'donor' && onOpenEmergencyModal && (
+              <button
+                onClick={onOpenEmergencyModal}
+                className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5"
+              >
+                <Bell className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">AI SOS Dispatch</span>
+                <span className="sm:hidden">SOS</span>
+              </button>
+            )}
 
-            <button
-              onClick={onOpenWhatsAppModal}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition"
-              title="Meta WhatsApp Business API & Twilio Sandbox Gateway"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">WhatsApp Alerts</span>
-              <span className="sm:hidden">WhatsApp</span>
-            </button>
+            {/* WhatsApp Alerts - not for donors */}
+            {role !== 'donor' && onOpenWhatsAppModal && (
+              <button
+                onClick={onOpenWhatsAppModal}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition"
+                title="Meta WhatsApp Business API & Twilio Sandbox Gateway"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">WhatsApp Alerts</span>
+                <span className="sm:hidden">WhatsApp</span>
+              </button>
+            )}
 
-            <button
-              onClick={onOpenResendModal}
-              className="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition"
-              title="Resend App Transactional Email API Gateway"
-            >
-              <Mail className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Resend Email</span>
-              <span className="sm:hidden">Resend</span>
-            </button>
+            {/* Resend Email - not for donors */}
+            {role !== 'donor' && onOpenResendModal && (
+              <button
+                onClick={onOpenResendModal}
+                className="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition"
+                title="Resend App Transactional Email API Gateway"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Resend Email</span>
+                <span className="sm:hidden">Resend</span>
+              </button>
+            )}
 
-            <button
-              onClick={onOpenPredictionModal}
-              className="px-3 py-1.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white text-xs font-extrabold rounded-xl shadow-sm flex items-center gap-1.5 transition animate-pulse"
-              title="FastAPI + Supabase 5-Factor AI Donor Prediction & Ranking Engine"
-            >
-              <Brain className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">AI Prediction Engine</span>
-              <span className="sm:hidden">AI Predict</span>
-            </button>
+            {/* AI Prediction Engine - not for donors */}
+            {role !== 'donor' && onOpenPredictionModal && (
+              <button
+                onClick={onOpenPredictionModal}
+                className="px-3 py-1.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white text-xs font-extrabold rounded-xl shadow-sm flex items-center gap-1.5 transition animate-pulse"
+                title="FastAPI + Supabase 5-Factor AI Donor Prediction & Ranking Engine"
+              >
+                <Brain className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">AI Prediction Engine</span>
+                <span className="sm:hidden">AI Predict</span>
+              </button>
+            )}
 
-            <button
-              onClick={onOpenTwilioVoiceModal}
-              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition"
-              title="Twilio Voice IVR Automated Calling Cascade"
-            >
-              <PhoneCall className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Twilio Voice Call</span>
-              <span className="sm:hidden">Voice Call</span>
-            </button>
+            {/* Twilio Voice Call - not for donors */}
+            {role !== 'donor' && onOpenTwilioVoiceModal && (
+              <button
+                onClick={onOpenTwilioVoiceModal}
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition"
+                title="Twilio Voice IVR Automated Calling Cascade"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Twilio Voice Call</span>
+                <span className="sm:hidden">Voice Call</span>
+              </button>
+            )}
 
             <button
               onClick={onOpenVoiceAssistant}
@@ -251,18 +268,6 @@ export const RoleDashboards: React.FC<RoleDashboardsProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('drives')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-              activeTab === 'drives'
-                ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <MapPin className="w-4 h-4" />
-            <span>Blood Drives</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('history')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
               activeTab === 'history'
@@ -273,6 +278,21 @@ export const RoleDashboards: React.FC<RoleDashboardsProps> = ({
             <History className="w-4 h-4" />
             <span>History</span>
           </button>
+
+          {/* Blood Drives tab - only for donors, not patients */}
+          {role !== 'patient' && role !== 'recipient' && (
+            <button
+              onClick={() => setActiveTab('drives')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                activeTab === 'drives'
+                  ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Blood Drives</span>
+            </button>
+          )}
 
           {role !== 'patient' && role !== 'recipient' && (
             <button
@@ -312,11 +332,11 @@ export const RoleDashboards: React.FC<RoleDashboardsProps> = ({
           />
         )}
 
-        {/* BLOOD DRIVES TAB */}
-        {activeTab === 'drives' && (
+        {/* BLOOD DRIVES TAB - only for donors, not patients */}
+        {activeTab === 'drives' && role !== 'patient' && role !== 'recipient' && (
           <BloodDrivesSection
             user={userState}
-            onOpenEmergencyModal={onOpenEmergencyModal}
+            onOpenEmergencyModal={onOpenEmergencyModal || (() => {})}
           />
         )}
 

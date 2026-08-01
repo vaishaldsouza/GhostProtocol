@@ -90,11 +90,12 @@ export const WhatsAppDispatchModal: React.FC<WhatsAppDispatchModalProps> = ({
 
   const hasMetaCreds = Boolean(metaToken && metaPhoneId);
   const hasTwilioCreds = Boolean(twilioAccountSid && twilioAuthToken);
+  const hasBaileysService = true; // Baileys is always available as free service
   const activeProvider = hasMetaCreds
     ? 'Meta WhatsApp Business API'
     : hasTwilioCreds
     ? 'Twilio WhatsApp Sandbox'
-    : 'Simulation Mode';
+    : 'Baileys (Free WhatsApp Web)';
 
   const refreshLogs = () => {
     seedInitialWhatsAppLogs(donorPhone, donorName);
@@ -147,15 +148,24 @@ export const WhatsAppDispatchModal: React.FC<WhatsAppDispatchModalProps> = ({
     setIsSending(true);
     setSendSuccessMessage(null);
 
-    const res = await sendWhatsAppEmergencyAlert(currentPayload);
+    try {
+      const res = await sendWhatsAppEmergencyAlert(currentPayload);
+      console.log('WhatsApp send response:', res);
 
-    setIsSending(false);
-    if (res.success) {
-      setSendSuccessMessage(`✅ WhatsApp Alert successfully dispatched to ${donorPhone}! Logged ID: ${res.log.id}`);
-      refreshLogs();
-      setTimeout(() => {
-        setActiveTab('logs');
-      }, 1200);
+      setIsSending(false);
+      if (res.success) {
+        setSendSuccessMessage(`✅ WhatsApp Alert successfully dispatched to ${donorPhone}! Provider: ${res.log.provider}`);
+        refreshLogs();
+        setTimeout(() => {
+          setActiveTab('logs');
+        }, 1200);
+      } else {
+        setSendSuccessMessage(`❌ Failed to send: ${res.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('WhatsApp send error:', error);
+      setIsSending(false);
+      setSendSuccessMessage(`❌ Error: ${error instanceof Error ? error.message : 'Failed to send message'}`);
     }
   };
 
@@ -192,12 +202,12 @@ export const WhatsAppDispatchModal: React.FC<WhatsAppDispatchModalProps> = ({
                     ? 'bg-emerald-400 text-slate-950'
                     : hasTwilioCreds
                     ? 'bg-amber-400 text-slate-950'
-                    : 'bg-slate-500 text-white'
+                    : 'bg-blue-500 text-white'
                 }`}>
                   {activeProvider}
                 </span>
                 <span className="text-xs text-emerald-100 hidden sm:inline">
-                  {hasMetaCreds || hasTwilioCreds ? 'Live Mode Active' : 'Sandbox Mode'}
+                  {hasMetaCreds || hasTwilioCreds ? 'Live Mode Active' : 'Free WhatsApp Web Mode'}
                 </span>
               </div>
               <h3 className="text-lg font-black tracking-tight mt-0.5">
@@ -276,6 +286,21 @@ export const WhatsAppDispatchModal: React.FC<WhatsAppDispatchModalProps> = ({
                     Official WhatsApp Template Compliant
                   </span>
                 </div>
+
+                {!hasMetaCreds && !hasTwilioCreds && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 rounded-2xl text-xs">
+                    <div className="flex items-start gap-2">
+                      <Smartphone className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-blue-900 dark:text-blue-100 mb-1">Free WhatsApp Web Mode Active</p>
+                        <p className="text-blue-700 dark:text-blue-300">
+                          Using Baileys (WhatsApp Web) — completely free! For real messages, run: 
+                          <code className="bg-blue-100 dark:bg-blue-900 px-1.5 py-0.5 rounded font-mono ml-1">npx tsx whatsapp-service.ts</code>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -380,8 +405,16 @@ export const WhatsAppDispatchModal: React.FC<WhatsAppDispatchModalProps> = ({
                 </div>
 
                 {sendSuccessMessage && (
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 rounded-2xl text-xs font-bold flex items-center gap-2 animate-fadeIn">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <div className={`p-3 border-2 rounded-2xl text-xs font-bold flex items-center gap-2 animate-fadeIn ${
+                    sendSuccessMessage.startsWith('✅') 
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+                      : 'bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200'
+                  }`}>
+                    {sendSuccessMessage.startsWith('✅') ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                    )}
                     <span>{sendSuccessMessage}</span>
                   </div>
                 )}

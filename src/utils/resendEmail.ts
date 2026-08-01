@@ -33,7 +33,7 @@ export interface ResendEmailLog {
   status: 'queued' | 'sent' | 'delivered' | 'accepted' | 'declined' | 'failed';
   responseAt?: string;
   resendEmailId?: string;
-  provider: 'Resend Transactional API' | 'Resend Sandbox Simulator';
+  provider: 'Gmail SMTP (Nodemailer)' | 'Email Sandbox Simulator';
   rawApiResponse?: any;
 }
 
@@ -250,7 +250,7 @@ export async function sendResendTransactionalEmail(
   // Load runtime credentials saved via Config tab
   const emailCreds = loadEmailCredentials();
 
-  let provider: ResendEmailLog['provider'] = 'Resend Sandbox Simulator';
+  let provider: ResendEmailLog['provider'] = 'Gmail SMTP (Nodemailer)';
   let rawApiResponse: any = null;
   let status: ResendEmailLog['status'] = 'sent';
   let resendEmailId: string | undefined = undefined;
@@ -274,7 +274,8 @@ export async function sendResendTransactionalEmail(
 
     if (response.ok && rawApiResponse?.success) {
       const p: string = rawApiResponse.provider || '';
-      provider = p.includes('Simulator') ? 'Resend Sandbox Simulator' : 'Resend Transactional API';
+      provider = p.includes('Gmail SMTP') ? 'Gmail SMTP (Nodemailer)' : 
+                  p.includes('Simulator') ? 'Email Sandbox Simulator' : 'Gmail SMTP (Nodemailer)';
       resendEmailId = rawApiResponse.messageId;
       status = p.includes('Simulator') ? 'sent' : 'delivered';
     }

@@ -224,6 +224,7 @@ export interface SpeakOptions {
 const LANG_MAP: Record<string, string> = {
   english: 'en-IN',
   hindi:   'hi-IN',
+  kannada: 'kn-IN',
   tamil:   'ta-IN',
   telugu:  'te-IN',
   bengali: 'bn-IN',
@@ -371,6 +372,7 @@ export function getVoiceSession(lang = 'en-IN'): VoiceSession {
 export const SUPPORTED_LANGUAGES = [
   { code: 'en-IN', label: 'English',         nativeLabel: 'English' },
   { code: 'hi-IN', label: 'Hindi',           nativeLabel: 'हिंदी' },
+  { code: 'kn-IN', label: 'Kannada',         nativeLabel: 'ಕನ್ನಡ' },
   { code: 'ta-IN', label: 'Tamil',           nativeLabel: 'தமிழ்' },
   { code: 'te-IN', label: 'Telugu',          nativeLabel: 'తెలుగు' },
   { code: 'bn-IN', label: 'Bengali',         nativeLabel: 'বাংলা' },
@@ -383,4 +385,190 @@ export function generateWaveformBars(count = 20, active = false): number[] {
   return Array.from({ length: count }, () =>
     active ? Math.random() * 80 + 20 : Math.random() * 15 + 5,
   );
+}
+
+// ── Murf AI Text-to-Speech Integration ────────────────────────────────────────────
+
+export interface MurfAudioOptions {
+  voiceId?: string;
+  apiKey?: string;
+}
+
+export async function generateMurfAudio(
+  text: string,
+  options: MurfAudioOptions = {}
+): Promise<{ success: boolean; audioUrl?: string; provider?: string; error?: string }> {
+  try {
+    const response = await fetch('/api/voice/murf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        voiceId: options.voiceId,
+        murfApiKey: options.apiKey,
+      }),
+    });
+
+    const data = await response.json();
+    console.log('Murf AI response:', data);
+
+    if (response.ok && data.success) {
+      return {
+        success: true,
+        audioUrl: data.audioUrl,
+        provider: data.provider,
+      };
+    } else {
+      return {
+        success: false,
+        error: data.error || 'Failed to generate audio',
+      };
+    }
+  } catch (error) {
+    console.error('Murf AI error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to generate audio',
+    };
+  }
+}
+
+let currentMurfAudio: HTMLAudioElement | null = null;
+
+export async function playMurfAudio(text: string, options: MurfAudioOptions = {}): Promise<void> {
+  try {
+    // Stop any currently playing audio
+    stopMurfAudio();
+
+    const result = await generateMurfAudio(text, options);
+    
+    if (!result.success || !result.audioUrl) {
+      console.error('Failed to generate Murf audio:', result.error);
+      // Fallback to browser TTS
+      speak(text);
+      return;
+    }
+
+    // Create and play the audio
+    const audio = new Audio(result.audioUrl);
+    currentMurfAudio = audio;
+    
+    audio.onended = () => {
+      currentMurfAudio = null;
+    };
+    
+    audio.onerror = () => {
+      console.error('Failed to play Murf audio');
+      currentMurfAudio = null;
+      // Fallback to browser TTS
+      speak(text);
+    };
+
+    await audio.play();
+  } catch (error) {
+    console.error('Error playing Murf audio:', error);
+    // Fallback to browser TTS
+    speak(text);
+  }
+}
+
+export function stopMurfAudio(): void {
+  if (currentMurfAudio) {
+    currentMurfAudio.pause();
+    currentMurfAudio.currentTime = 0;
+    currentMurfAudio = null;
+  }
+  // Also stop browser TTS
+  stopSpeaking();
+}
+
+// ── Gemini AI Chat Integration ───────────────────────────────────────────────────
+
+export interface GeminiChatOptions {
+  context?: string;
+  apiKey?: string;
+}
+
+export async function askGeminiAI(
+  text: string,
+  options: GeminiChatOptions = {}
+): Promise<{ success: boolean; response?: string; provider?: string; error?: string }> {
+  try {
+    const response = await fetch('/api/voice/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        context: options.context,
+        geminiApiKey: options.apiKey,
+      }),
+    });
+
+    const data = await response.json();
+    console.log('Gemini AI response:', data);
+
+    if (response.ok && data.success) {
+      return {
+        success: true,
+        response: data.response,
+        provider: data.provider,
+      };
+    } else {
+      return {
+        success: false,
+        error: data.error || 'Failed to get AI response',
+      };
+    }
+  } catch (error) {
+    console.error('Gemini AI error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get AI response',
+    };
+  }
+}
+
+// ── Combined AI Voice Assistant ──────────────────────────────────────────────────
+
+export async function askAiVoiceAssistant(
+  text: string,
+  options: {
+    useMurf?: boolean;
+    useGemini?: boolean;
+    murfOptions?: MurfAudioOptions;
+    geminiOptions?: GeminiChatOptions;
+  } = {}
+): Promise<{ success: boolean; response?: string; error?: string }> {
+  try {
+    let responseText = text;
+
+    // First, get AI response if Gemini is enabled
+    if (options.useGemini) {
+      const geminiResult = await askGeminiAI(text, options.geminiOptions);
+      if (geminiResult.success && geminiResult.response) {
+        responseText = geminiResult.response;
+      } else {
+        console.warn('Gemini AI failed, using original text:', geminiResult.error);
+      }
+    }
+
+    // Then, speak the response using Murf if enabled
+    if (options.useMurf) {
+      await playMurfAudio(responseText, options.murfOptions);
+    } else {
+      // Fallback to browser TTS
+      speak(responseText);
+    }
+
+    return {
+      success: true,
+      response: responseText,
+    };
+  } catch (error) {
+    console.error('AI voice assistant error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to process voice request',
+    };
+  }
 }

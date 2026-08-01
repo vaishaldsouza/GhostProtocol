@@ -18,6 +18,7 @@ import { VoiceAssistantModal } from './components/VoiceAssistantModal';
 import { WhatsAppDispatchModal } from './components/WhatsAppDispatchModal';
 import { ResendDispatchModal } from './components/ResendDispatchModal';
 import { TwilioVoiceDispatchModal } from './components/TwilioVoiceDispatchModal';
+import { SmartDonorPredictionModal } from './components/SmartDonorPredictionModal';
 import { SideChatbot } from './components/SideChatbot';
 import { UserRole, User } from './types';
 import { getCurrentSession, signOut, onAuthStateChange, updateProfile } from './utils/auth';
@@ -132,31 +133,56 @@ export default function App() {
         user={currentUser}
         onUpdateUser={handleUpdateUser}
         onLogout={handleLogout}
-        onOpenEmergencyModal={() => setSelectedFeatureModal('emergency-assistant')}
+        onOpenEmergencyModal={userRole !== 'donor' ? () => setSelectedFeatureModal('emergency-assistant') : undefined}
         onOpenEligibilityModal={() => setSelectedFeatureModal('eligibility-ai')}
         onOpenVoiceAssistant={() => setSelectedFeatureModal('voice-assistant')}
-        onOpenWhatsAppModal={() => setSelectedFeatureModal('whatsapp-dispatch')}
-        onOpenResendModal={() => setSelectedFeatureModal('resend-dispatch')}
-        onOpenTwilioVoiceModal={() => setSelectedFeatureModal('twilio-voice')}
+        onOpenWhatsAppModal={userRole !== 'donor' ? () => setSelectedFeatureModal('whatsapp-dispatch') : undefined}
+        onOpenResendModal={userRole !== 'donor' ? () => setSelectedFeatureModal('resend-dispatch') : undefined}
+        onOpenTwilioVoiceModal={userRole !== 'donor' ? () => setSelectedFeatureModal('twilio-voice') : undefined}
+        onOpenPredictionModal={userRole !== 'donor' ? () => setSelectedFeatureModal('prediction-engine') : undefined}
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
       />
-      <EmergencyAssistantModal
-        isOpen={selectedFeatureModal === 'emergency-assistant'}
-        onClose={() => setSelectedFeatureModal(null)}
-      />
-      <WhatsAppDispatchModal
-        isOpen={selectedFeatureModal === 'whatsapp-dispatch'}
-        onClose={() => setSelectedFeatureModal(null)}
-      />
-      <ResendDispatchModal
-        isOpen={selectedFeatureModal === 'resend-dispatch'}
-        onClose={() => setSelectedFeatureModal(null)}
-      />
-      <TwilioVoiceDispatchModal
-        isOpen={selectedFeatureModal === 'twilio-voice'}
-        onClose={() => setSelectedFeatureModal(null)}
-      />
+      {/* Emergency Assistant - not for donors */}
+      {userRole !== 'donor' && (
+        <EmergencyAssistantModal
+          isOpen={selectedFeatureModal === 'emergency-assistant'}
+          onClose={() => setSelectedFeatureModal(null)}
+        />
+      )}
+
+      {/* WhatsApp Dispatch - not for donors */}
+      {userRole !== 'donor' && (
+        <WhatsAppDispatchModal
+          isOpen={selectedFeatureModal === 'whatsapp-dispatch'}
+          onClose={() => setSelectedFeatureModal(null)}
+        />
+      )}
+
+      {/* Resend Email - not for donors */}
+      {userRole !== 'donor' && (
+        <ResendDispatchModal
+          isOpen={selectedFeatureModal === 'resend-dispatch'}
+          onClose={() => setSelectedFeatureModal(null)}
+        />
+      )}
+
+      {/* Twilio Voice - not for donors */}
+      {userRole !== 'donor' && (
+        <TwilioVoiceDispatchModal
+          isOpen={selectedFeatureModal === 'twilio-voice'}
+          onClose={() => setSelectedFeatureModal(null)}
+        />
+      )}
+
+      {/* Prediction Engine - not for donors */}
+      {userRole !== 'donor' && (
+        <SmartDonorPredictionModal
+          isOpen={selectedFeatureModal === 'prediction-engine'}
+          onClose={() => setSelectedFeatureModal(null)}
+        />
+      )}
+
       <SideChatbot />
     </>;
   }

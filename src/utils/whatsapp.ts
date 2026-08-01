@@ -180,13 +180,16 @@ async function callWhatsAppProxy(
   creds: WhatsAppCredentials
 ): Promise<{ success: boolean; provider: WhatsAppMessageLog['provider']; rawApiResponse: any }> {
   try {
+    // Force use of Baileys since it's our free service
+    const provider = 'baileys';
+    
     const response = await fetch('/api/whatsapp/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to,
         messageBody,
-        provider: 'auto',
+        provider,
         metaToken: creds.metaToken,
         metaPhoneId: creds.metaPhoneId,
         twilioAccountSid: creds.twilioAccountSid,
